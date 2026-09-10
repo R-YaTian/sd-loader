@@ -47,7 +47,7 @@ static void handle_file_error(const char *path, u8 drive, FRESULT res){
 static void handle_toolbox_error(toolbox_status res, void *extra_info){
 	char msg[48];
 	if(res == TOOLBOX_INVALID_UPDATE_SIZE){
-		fw_update_info * update_info = (fw_update_info*)extra_info; 
+		fw_update_info * update_info = (fw_update_info*)extra_info;
 		s_printf(&msg[0], "%s on %s too large!", update_info->path, drive_friendly_names[update_info->drive]);
 	}else{
 		return;
@@ -78,7 +78,6 @@ void info_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
 		s_printf(&ipl_hash_str[0], "IPL Hash  : 0x%08x", desc.sdloader_hash);
 		s_printf(&fuse_str[0],     "Fuse Count: %d", desc.fuse_cnt > 999 ? 999 : desc.fuse_cnt);
 	}
-
 
 	tui_entry_t menu_entries[] = {
 		[0] = TUI_ENTRY_TEXT_DISABLED(sig_str,      &menu_entries[1]),
@@ -311,7 +310,6 @@ static void update_cb(const char *path, u32 size_max, tui_action_modifying_cb_t 
 		goto out;
 	}
 
-
 	char title[25];
 
 	s_printf(&title[0], "Apply update from %s", drive_friendly_names[drive]);
@@ -323,12 +321,12 @@ static void update_cb(const char *path, u32 size_max, tui_action_modifying_cb_t 
 }
 
 static void fw_update_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
-	const char *path = "update.bin"; 
+	const char *path = "update.bin";
 	update_cb(path, MODCHIP_FW_MAX_SIZE, update_fw, menu);
 }
 
 static void bl_update_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
-	const char *path = "bl_update.bin"; 
+	const char *path = "bl_update.bin";
 	update_cb(path, MODCHIP_RP_BL_MAX_SIZE, update_bl, menu);
 }
 
@@ -382,7 +380,6 @@ static void save_settings_cb(void *data){
 
 	tui_print_status(COL_TEAL, "Saving settings...");
 
-
 	u32 start = get_tmr_ms();
 
 	bool res = modchip_set_cfg(save_settings_data->temp_cfg);
@@ -408,7 +405,6 @@ static void default_action_update(sd_loader_cfg_t *vol_cfg, tui_entry_t *entry, 
 
 	s_printf((char*)entry->title.text, "Boot action  %s", default_action_names[vol_cfg->default_action]);
 }
-
 
 static void default_action_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
 	sd_loader_cfg_t *cfg = (sd_loader_cfg_t*)data;
@@ -496,14 +492,12 @@ void toolbox(u32 x, u32 y, sd_loader_cfg_t *cfg){
 
 	tui_entry_t menu_entries[] = {
 		[0] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("FW  Info", info_cb, NULL, false, &menu_entries[1]),
-		[1] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("FW  Reset", reset_cb, NULL, command_pending, &menu_entries[2]),
-		[2] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("FW  Update", fw_update_cb, NULL, command_pending, &menu_entries[3]),
-		[3] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("FW  Rollback", fw_rollback_cb, NULL, command_pending, &menu_entries[4]),
-		[4] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("IPL Update", ipl_update_cb, NULL, command_pending, &menu_entries[5]),
-		[5] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("IPL Settings", ipl_settings_cb, cfg, false, &menu_entries[6]),
-		[6] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("BL  Update", bl_update_cb, NULL, command_pending, &menu_entries[7]),
-		// [6] = TUI_ENTRY_TEXT("", &menu_entries[7]),
-		[7] = TUI_ENTRY_BACK(NULL)
+		[1] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("FW  Update", fw_update_cb, NULL, command_pending, &menu_entries[2]),
+		[2] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("FW  Rollback", fw_rollback_cb, NULL, command_pending, &menu_entries[3]),
+		[3] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("IPL Update", ipl_update_cb, NULL, command_pending, &menu_entries[4]),
+		[4] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("IPL Settings", ipl_settings_cb, cfg, false, &menu_entries[5]),
+		[5] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("Train  Reset", reset_cb, NULL, command_pending, &menu_entries[6]),
+		[6] = TUI_ENTRY_BACK(NULL)
 	};
 
 	tui_entry_menu_t menu = {
@@ -522,4 +516,4 @@ void toolbox(u32 x, u32 y, sd_loader_cfg_t *cfg){
 	};
 
 	tui_menu_start_rot(&menu);
-} 
+}

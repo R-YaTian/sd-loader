@@ -21,7 +21,6 @@ __attribute__((noreturn)) void ipl_main(){
 
 	main();
 
-	// rcm_if_t210_or_off();
 	power_set_state(POWER_OFF);
 
 	while(1){

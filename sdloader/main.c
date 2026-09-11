@@ -128,14 +128,12 @@ static void handle_sdloader_status(SD_LOADER_STATUS res, u32 extra_info){
 }
 
 __attribute__((noreturn)) static void launch_payload(){
-	if(hw_get_chip_id() == GP_HIDREV_MAJOR_T210) {
+	if (!is_t210()) {
 		*(u32*)0x7000EF08 = 0x34313254;   // "T214"
 		*(u32*)0x7000EF0C = 0x3043444D;   // "MDC0"
-	} else {
-		*(u32*)0x7000EF08 = 0x30313254;   // "T210"
-		*(u32*)0x7000EF0C = 0x3143444D;   // "MDC1"
+		*(u32*)0x7000EF10 = 0x00000000;   // Null terminate
 	}
-	*(u32*)0x7000EF10 = 0x00000000;   // Null terminate
+
 	deinit();
 	/* payloads (may) expect to be loaded at 0x40010000, relocate before jumping to payload */
 	reloc_and_start_payload(payload_ctx.addr, payload_ctx.size);

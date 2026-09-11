@@ -59,7 +59,7 @@ CUSTOMDEFINES += -DGFX_INC=$(GFX_INC) -DMAX_PAYLOAD_SIZE=$(MAX_PAYLOAD_SIZE) -DB
 
 WARNINGS := -Wno-main-return-type -Wno-main -Wall -Wno-array-bounds -Wno-stringop-overread -Wno-stringop-overflow
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb-interwork -mthumb -Wstack-usage=1536
-LTO_FLAGS = -flto
+LTO_FLAGS = -flto=auto
 CFLAGS = $(ARCH) -Os -g -gdwarf-4 -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -std=gnu11 $(WARNINGS) $(CUSTOMDEFINES)
 LDFLAGS = $(ARCH) $(LTO_FLAGS) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections -Xlinker --defsym=IPL_LOAD_ADDR=$(IPL_LOAD_ADDR)
 

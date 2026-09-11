@@ -1,6 +1,6 @@
 .PHONY: all
 
-LOADER_LOAD_ADDR = 0x40010000
+LOADER_LOAD_ADDR = 0x40010170
 
 OUT_DIR = output
 BUILD_DIR = build
@@ -10,11 +10,12 @@ SDLOADER_DIR = sdloader
 
 PAYLOAD_NAME = sdloader
 
+BCT_DATA = bct_data
 BCT_SIG = bct_sig
 BCT_BL_ENTRY = bct_bl_entry
 
 BCT_HEADERS = $(addprefix $(OUT_DIR)/, \
-	$(BCT_SIG).h $(BCT_BL_ENTRY).h)
+	$(BCT_SIG).h $(BCT_BL_ENTRY).h $(BCT_DATA).h)
 
 BCT_BINS = $(patsubst $(OUT_DIR)/%.h, $(BUILD_DIR)/%.bin, $(BCT_HEADERS))
 
@@ -36,7 +37,7 @@ all: $(OUT_DIR)/$(PAYLOAD_NAME).bin $(OUT_DIR)/$(PAYLOAD_NAME).enc $(OUT_DIR)/$(
 tools: $(TOOLS)
 
 clean: $(TOOLS) $(LOADER) $(SDLOADER)
-	rm -rf $(OUT_DIR)
+	rm -rf $(OUT_DIR) $(BUILD_DIR)
 
 $(TOOLS):
 	@echo building $@
@@ -71,7 +72,7 @@ $(BCT_BINS) : bctbin
 
 bctbin : $(OUT_DIR)/$(PAYLOAD_NAME).enc $(LOADER) $(BUILD_DIR)
 	@echo building $@
-	@python check.py make_erista_bct  --sig_out_path $(BUILD_DIR)/$(BCT_SIG).bin --bl_entry_out_path $(BUILD_DIR)/$(BCT_BL_ENTRY).bin $(OUT_DIR)/$(PAYLOAD_NAME).enc $(LOADER)
+	@python check.py make_erista_bct --out_file $(BUILD_DIR)/$(BCT_DATA).bin --sig_out_path $(BUILD_DIR)/$(BCT_SIG).bin --bl_entry_out_path $(BUILD_DIR)/$(BCT_BL_ENTRY).bin $(OUT_DIR)/$(PAYLOAD_NAME).enc $(LOADER)
 
 $(OUT_DIR):
 	@mkdir -p "$(OUT_DIR)"

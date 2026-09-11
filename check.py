@@ -125,7 +125,7 @@ class Payload:
 		data = payload.to_bytes()
 
 		if not load_address:
-			load_address = 0x40010000
+			load_address = 0x40010170
 
 		if not entry_point:
 			entry_point = load_address
@@ -153,6 +153,7 @@ class Payload:
 				raise ValueError("Data hash must be a 64 byte SHA256 hash")
 		else:
 			data_hash = get_sha256(data).digest()
+			print(f"Data hash: {data_hash.hex()}")
 
 		if signature:
 			if len(signature) != 0x100:
@@ -168,6 +169,7 @@ class Payload:
 			data_to_sign += bytearray(0x10)
 
 			payload_hash = get_sha256(data_to_sign)
+			print(f"Payload hash: {payload_hash.hexdigest()}")
 
 			signature = get_cipher_pss(key).sign(payload_hash)
 
@@ -193,10 +195,6 @@ class Payload:
 				if len(data) % pad:
 					data += bytearray(-len(data) % pad)
 			f.write(data)
-
-	def make_signature(self):
-		h = get_sha256(self.get_data_to_sign())
-		return get_cipher_pss(self.key).sign(h)
 
 	def get_data_to_sign(self):
 		data_to_sign = bytearray()
@@ -233,9 +231,6 @@ class Payload:
 			raise ExceptionGroup("Package invalid", errs)
 		else:
 			return True
-
-	def get_data_decrypt(self):
-		return decrypt_bytes(self.data)
 
 	def __str__(self):
 		ret = ""
@@ -281,24 +276,25 @@ class EristaBlEntry:
 		if start_block is None:
 			start_block = 0xfc
 		if load_address is None:
-			load_address  = 0x40010000
+			load_address = 0x40010170
 		with open(path, "rb") as f:
 			with open(path_loader, "rb") as fl:
 				data = bytearray(f.read())
 				data_ldr = bytearray(fl.read())
 				h = get_sha256(data)
 				signature = get_cipher_pss(rsa_key_custom).sign(h)
-				return cls(signature, version, start_block, len(data), load_address, load_address + len(data_ldr) + 0x20, data, 0x3)
+				return cls(signature, version, start_block, len(data), 0x40010000, load_address + len(data_ldr) + 0x20, data, 0x3)
 
 	@classmethod
 	def from_bytes(cls, data, payload):
-		version = int.from_bytes(data[0:0x4], byteorder = 'little', signed = False)
-		start_block = int.from_bytes(data[0x4:0x8], byteorder = 'little', signed = False)
-		length = int.from_bytes(data[0xc:0x10], byteorder = 'little', signed = False)
-		load_address = int.from_bytes(data[0x10:0x14], byteorder = 'little', signed = False)
-		entry_point = int.from_bytes(data[0x14:0x18], byteorder = 'little', signed = False)
-		attributes = int.from_bytes(data[0x18:0x1c], byteorder = 'little', signed = False)
-		signature = data[0x20:0x120][::-1]
+		loaders_used = int.from_bytes(data[0:0x4], byteorder = 'little', signed = False)
+		version = int.from_bytes(data[0x4:0x8], byteorder = 'little', signed = False)
+		start_block = int.from_bytes(data[0x8:0xc], byteorder = 'little', signed = False)
+		length = int.from_bytes(data[0x10:0x14], byteorder = 'little', signed = False)
+		load_address = int.from_bytes(data[0x14:0x18], byteorder = 'little', signed = False)
+		entry_point = int.from_bytes(data[0x18:0x1c], byteorder = 'little', signed = False)
+		attributes = int.from_bytes(data[0x1c:0x20], byteorder = 'little', signed = False)
+		signature = data[0x30:0x130][::-1]
 		return cls(signature, version, start_block, length, load_address, entry_point, payload, attributes)
 
 	def to_bytes(self):
@@ -357,7 +353,7 @@ class EristaBlEntry:
 		return ret
 
 class EristaBct:
-	def __init__(self, bl_entry):
+	def __init__(self, bl_entry, signature = None):
 		self.bl_entry = bl_entry
 		self.loaders_used = 1
 
@@ -374,8 +370,13 @@ class EristaBct:
 		self.clock_divider = 0x9
 		self.data_width = 0x2
 
-		h = get_sha256(self.data_to_sign())
-		self.signature = get_cipher_pss(rsa_key_custom).sign(h)
+		if signature:
+			if len(signature) != 0x100:
+				raise ValueError("Signature must be a 256 byte RSASSA-PSS signature")
+			self.signature = signature
+		else:
+			h = get_sha256(self.data_to_sign())
+			self.signature = get_cipher_pss(rsa_key_custom).sign(h)
 
 	def data_to_sign(self):
 		data = bytearray()
@@ -417,8 +418,7 @@ class EristaBct:
 		data += bytearray(0xa)
 		data += rsa_n_custom.to_bytes(length = 0x100, byteorder = "little", signed = False)
 		data += bytearray(0x10)
-		h = get_sha256(self.data_to_sign())
-		data += get_cipher_pss(rsa_key_custom).sign(h)[::-1]
+		data += self.signature[::-1]
 
 		data += bytearray(0x4)
 		data += bytearray(0x20)
@@ -434,7 +434,6 @@ class EristaBct:
 		with open(path, "wb") as f:
 			f.write(self.to_bytes())
 
-
 	def write_sig_to_file(self, path):
 		with open(path, "wb") as f:
 			data = self.to_bytes()
@@ -443,8 +442,7 @@ class EristaBct:
 	def write_bl_entry_to_file(self, path):
 		with open(path, "wb") as f:
 			data = self.to_bytes()
-			f.write(data[0x2330:0x245c])
-
+			f.write(data[0x232c:0x245c])
 
 	def is_signature_valid(self):
 		h = get_sha256(self.data_to_sign())
@@ -495,7 +493,6 @@ def check_package(args):
 	if(args.use_nintendo_pk):
 		key = rsa_key_nintendo
 	p = Payload.from_file(args.package, key = key)
-	# p.verify()
 	print(p)
 
 def decrypt(args):
@@ -505,7 +502,7 @@ def decrypt(args):
 			fout.write(data)
 
 def make_erista_bct(args):
-	bl_entry = EristaBlEntry.from_file(args.payload_enc, args.loader_enc, args.version, args.start_block, args.load_addr)
+	bl_entry = EristaBlEntry.from_file(args.payload_enc, args.loader, args.version, args.start_block, args.load_addr)
 	bct = EristaBct(bl_entry)
 	print(bct)
 	if args.out_file is not None:
@@ -514,6 +511,17 @@ def make_erista_bct(args):
 		bct.write_bl_entry_to_file(args.bl_entry_out_path)
 	if args.sig_out_path is not None:
 		bct.write_sig_to_file(args.sig_out_path)
+
+def check_erista_bct(args):
+	with open(args.bct_bl_entry, "rb") as fin_bl:
+		with open(args.bct_sig_file, "rb") as fin_sig:
+			with open(args.sdloader_enc, "rb") as fin:
+				data = bytearray(fin.read())
+				bl_data = bytearray(fin_bl.read())
+				sig_data = bytearray(fin_sig.read())[::-1]
+				bl_entry = EristaBlEntry.from_bytes(bl_data, data)
+				bct = EristaBct(bl_entry, sig_data)
+				print(bct)
 
 
 def auto_int(x):
@@ -537,6 +545,12 @@ parser_check.add_argument("package", type = str)
 parser_check.add_argument("--use_nintendo_pk", action = "store_true")
 parser_check.set_defaults(func = check_package)
 
+parser_check_erista = subparsers.add_parser("check_erista_bct")
+parser_check_erista.add_argument("bct_bl_entry", type = str)
+parser_check_erista.add_argument("bct_sig_file", type = str)
+parser_check_erista.add_argument("sdloader_enc", type = str)
+parser_check_erista.set_defaults(func = check_erista_bct)
+
 parser_dec = subparsers.add_parser("decrypt")
 parser_dec.add_argument("file_in", type = str)
 parser_dec.add_argument("file_out", type = str)
@@ -544,7 +558,7 @@ parser_dec.set_defaults(func = decrypt)
 
 parser_make_erista = subparsers.add_parser("make_erista_bct")
 parser_make_erista.add_argument("payload_enc", type = str)
-parser_make_erista.add_argument("loader_enc", type = str)
+parser_make_erista.add_argument("loader", type = str)
 parser_make_erista.add_argument("--out_file", type = str)
 parser_make_erista.add_argument("--load_addr", type = auto_int)
 parser_make_erista.add_argument("--entry_point", type = auto_int)

@@ -4,7 +4,7 @@ endif
 
 include $(DEVKITARM)/base_rules
 
-LOADER_LOAD_ADDR ?= 0x40010000
+LOADER_LOAD_ADDR ?= 0x40010170
 
 BUILD_DIR = build
 OUT_DIR = output

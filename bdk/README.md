@@ -9,3 +9,4 @@
 - ianos: Remove entirely
 - mem: Remove `minerva`
 - input: Remove entirely
+- libs: Remove `lvgl` and `compr`

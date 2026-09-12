@@ -38,7 +38,7 @@ OBJS = $(addprefix $(BUILD_DIR)/$(TARGET)/, \
     main.o irq.o \
 	heap.o mc.o bpmp.o clock.o fuse.o se.o hw_init.o gpio.o pinmux.o i2c.o util.o btn.o \
     max7762x.o bq24193.o \
-    sdmmc.o sd.o sdmmc_driver.o sprintf.o \
+    sdmmc.o sd.o sdmmc_driver.o \
 	di.o gfx.o tui.o emmc.o timer.o \
 	diskio.o ff.o ffsystem.o ffunicode.o max17050.o \
 	loader.o modchip.o files.o )

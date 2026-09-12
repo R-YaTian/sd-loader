@@ -60,18 +60,14 @@
 #include <storage/mbr_gpt.h>
 #include <storage/mmc.h>
 #include <storage/nx_emmc_bis.h>
-#include <storage/ramdisk.h>
 #include <storage/sd.h>
 #include <storage/sdmmc.h>
-#include <thermal/fan.h>
-#include <thermal/tmp451.h>
-#include <usb/usbd.h>
 #include <utils/aarch64_util.h>
 #include <utils/btn.h>
-#include <utils/dirlist.h>
-#include <utils/ini.h>
 #include <utils/list.h>
 #include <utils/sprintf.h>
+#include <utils/tegra_bct.h>
+#include <utils/tegra_bit.h>
 #include <utils/types.h>
 #include <utils/util.h>
 

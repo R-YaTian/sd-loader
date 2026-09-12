@@ -9,7 +9,6 @@
 #include <string.h>
 #include <tui.h>
 #include <utils/btn.h>
-#include <utils/sprintf.h>
 #include <utils/types.h>
 #include <utils/util.h>
 #include <soc/t210.h>
@@ -105,27 +104,31 @@ static void init_display(){
 	}
 }
 
-static void handle_sdloader_status(SD_LOADER_STATUS res, u32 extra_info){
-	char msg[48];
+static void handle_sdloader_status(SD_LOADER_STATUS res){
+	const char msg[] = "Payload too large!";
+	const char msg_menu[] = "User forced menu!";
+	const char msg_err[] = "An error occurred!";
+
 	u8 col = COL_ORANGE;
 
+	const char *msg_to_display = NULL;
 	switch(res){
 	case SD_LOADER_INV_PAYLOAD_SZ:
-		s_printf(msg, "Payload on %s too large!", drive_friendly_names[extra_info]);
+		msg_to_display = msg;
 		break;
 	case SD_LOADER_FORCE_MENU:
-		s_printf(msg, "User forced menu!");
+		msg_to_display = msg_menu;
 		col = COL_TEAL;
 		break;
 	case SD_LOADER_OK:
 		return;
 	default:
-		s_printf(msg, "An error occured!");
+		msg_to_display = msg_err;
 		break;
 	}
 
 	init_display();
-	tui_print_status(col, msg);
+	tui_print_status(col, msg_to_display);
 }
 
 __attribute__((noreturn)) static void launch_payload(){
@@ -143,17 +146,20 @@ __attribute__((noreturn)) static void launch_payload(){
 	}
 }
 
-static void handle_file_error(const char *path, u8 drive, FRESULT res){
-	char msg[48];
+static void handle_file_error(FRESULT res){
+	const char msg[] = "No payload found!";
+	const char msg_err[] = "Error reading payload from SD!";
+	const char *msg_to_display = NULL;
+
 	if(res == FR_NO_FILE){
-		s_printf(&msg[0], "No %s found!", path);
+		msg_to_display = msg;
 	}else if(res != FR_OK){
-		s_printf(&msg[0], "Error reading %s from %s!", path, drive_friendly_names[drive]);
+		msg_to_display = msg_err;
 	}else{
 		return;
 	}
 	init_display();
-	tui_print_status(COL_ORANGE, msg);
+	tui_print_status(COL_ORANGE, msg_to_display);
 }
 
 static SD_LOADER_STATUS load_payload()
@@ -181,14 +187,14 @@ static SD_LOADER_STATUS load_payload()
 
 	if (res != FR_OK)
 	{
-		handle_file_error(path, drive, res);
+		handle_file_error(res);
 		return SD_LOADER_ERROR;
 	}
 
 	SD_LOADER_STATUS sd_res = read_payload(&f);
 	if (sd_res != SD_LOADER_OK)
 	{
-		handle_sdloader_status(sd_res, drive);
+		handle_sdloader_status(sd_res);
 	}
 	f_close(&f);
 	return sd_res;
@@ -297,7 +303,7 @@ void main()
 	}
 	else if (btn & BTN_VOL_UP && !(btn & BTN_VOL_DOWN))
 	{
-		handle_sdloader_status(SD_LOADER_FORCE_MENU, 0);
+		handle_sdloader_status(SD_LOADER_FORCE_MENU);
 	}
 	else
 	{

@@ -81,7 +81,4 @@ typedef struct _gpt_t
 	gpt_entry_t  entries[128];
 } gpt_t;
 
-#define EFI_PART 0x5452415020494645
-#define MBR_MAGIC 0xaa55
-
 #endif

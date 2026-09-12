@@ -24,9 +24,12 @@
 #include <soc/i2c.h>
 #include <power/max77620.h>
 #include "loader.h"
-#include "modchip_toolbox.h"
 #include "files.h"
 #include <soc/bpmp.h>
+
+#if defined(ENABLE_TOOLBOX)
+#include "modchip_toolbox.h"
+#endif
 
 typedef struct{
 	void *addr;
@@ -191,18 +194,9 @@ static SD_LOADER_STATUS load_payload()
 	return sd_res;
 }
 
-static void clear_screen_except_logo_and_status(){
-	gfx_clear_rect_rot(COL_BLACK, 0, 88, gfx_ctxt.height, gfx_ctxt.width - 80);
-}
-
 static void power_off_cb(void *data){
 	deinit();
 	power_set_state(POWER_OFF);
-}
-
-static void rcm_cb(void *data){
-	deinit();
-	rcm_if_t210_or_off();
 }
 
 static void ofw_cb(void *data){
@@ -225,6 +219,11 @@ static void retry_cb(void *data){
 	try_launch_payload();
 }
 
+#if defined(ENABLE_TOOLBOX)
+static void clear_screen_except_logo_and_status(){
+	gfx_clear_rect_rot(COL_BLACK, 0, 88, gfx_ctxt.height, gfx_ctxt.width - 80);
+}
+
 static void start_toolbox(){
 	gfx_con_setpos_rot(0, 0);
 	clear_screen_except_logo_and_status();
@@ -234,9 +233,9 @@ static void start_toolbox(){
 static void toolbox_cb(){
 	start_toolbox();
 }
+#endif
 
 static void do_menu(){
-	bool t210 = is_t210();
 	tui_entry_menu_t menu = {
 		.colors = &TUI_COLOR_SCHEME_DEFAULT,
 		.height = 5,
@@ -250,17 +249,15 @@ static void do_menu(){
 		.timeout_ms = 60 * 1000, // return and power off if no action for 1min
 	};
 
-	tui_entry_t menu_more[] = {
-		[0] = TUI_ENTRY_ACTION_NO_BLANK("Reboot RCM",     rcm_cb,     NULL, false, &menu_more[1]),
-		[1] = TUI_ENTRY_ACTION_NO_BLANK("Launch payload", retry_cb,   NULL, false, &menu_more[2]),
-		[2] = TUI_ENTRY_ACTION_NO_BLANK("Toolbox",       toolbox_cb,  NULL, false, &menu_more[3]),
-		[3] = TUI_ENTRY_BACK(NULL),
-	};
-
 	tui_entry_t menu_entries[] = {
 		[0] = TUI_ENTRY_ACTION_NO_BLANK("Power  Off", power_off_cb, NULL, false, &menu_entries[1]),
 		[1] = TUI_ENTRY_ACTION_NO_BLANK("Reboot OFW", ofw_cb,       NULL, false, &menu_entries[2]),
-		[2] = TUI_ENTRY_MENU_EX        ("More", false, menu.pos_x, menu.pos_y, menu.pad, menu.colors, menu.width, 5, 0, t210 ? &menu_more[0] : &menu_more[1], false, NULL),
+#if !defined(ENABLE_TOOLBOX)
+		[2] = TUI_ENTRY_ACTION_NO_BLANK("Launch payload", retry_cb, NULL, false, NULL),
+#else
+		[2] = TUI_ENTRY_ACTION_NO_BLANK("Launch payload", retry_cb, NULL, false, &menu_entries[3]),
+		[3] = TUI_ENTRY_ACTION_NO_BLANK("Toolbox",     toolbox_cb,  NULL, false, NULL),
+#endif
 	};
 
 	menu.entries = menu_entries;
@@ -283,7 +280,8 @@ static void get_cfg(){
 	emmc_end();
 }
 
-void main(){
+void main()
+{
 	modchip_confirm_execution();
 	low_battery_shutdown();
 
@@ -293,16 +291,28 @@ void main(){
 
 	u8 btn = btn_read_vol();
 
-	if(btn & BTN_VOL_DOWN && btn & BTN_VOL_UP && !sdloader_cfg.disable_ofw_btn_combo){
+	if (btn & BTN_VOL_DOWN && btn & BTN_VOL_UP && !sdloader_cfg.disable_ofw_btn_combo)
+	{
 		power_set_state(REBOOT_BYPASS_FUSES);
-	}else if(btn & BTN_VOL_UP && !(btn & BTN_VOL_DOWN)){
+	}
+	else if (btn & BTN_VOL_UP && !(btn & BTN_VOL_DOWN))
+	{
 		handle_sdloader_status(SD_LOADER_FORCE_MENU, 0);
-	}else{
-		if(sdloader_cfg.default_action == MODCHIP_DEFAULT_ACTION_PAYLOAD){
+	}
+	else
+	{
+#if !defined(ENABLE_TOOLBOX)
+		if (sdloader_cfg.default_action == MODCHIP_DEFAULT_ACTION_PAYLOAD)
+		{
 			try_launch_payload();
-		}else if(sdloader_cfg.default_action == MODCHIP_DEFAULT_ACTION_OFW){
+		}
+		else if (sdloader_cfg.default_action == MODCHIP_DEFAULT_ACTION_OFW)
+		{
 			power_set_state(REBOOT_BYPASS_FUSES);
-		}else{
+		}
+		else
+#endif
+		{
 			init_display();
 		}
 	}

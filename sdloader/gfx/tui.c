@@ -160,7 +160,7 @@ tui_status_t tui_menu_start(tui_entry_menu_t *menu){
 			gfx_printf("%s\n", title);
 		}
 
-		u8 btn = btn_wait_timeout_single1(1000);
+		u8 btn = btn_wait_timeout_single(1000);
 
 		if(btn & BTN_VOL_UP){
 			tui_entry_t *next_selected = selected;
@@ -310,7 +310,7 @@ tui_status_t tui_menu_start_rot(tui_entry_menu_t *menu){
 	while(true){
 		tui_print_menu(menu);
 
-		u8 btn = btn_wait_timeout_single1(1000);
+		u8 btn = btn_wait_timeout_single(1000);
 
 		if(!btn){
 			if(menu->timeout_ms){

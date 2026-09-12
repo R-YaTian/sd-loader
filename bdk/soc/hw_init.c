@@ -48,7 +48,6 @@
 #include <utils/util.h>
 
 extern boot_cfg_t b_cfg;
-// extern volatile nyx_storage_t *nyx_str;
 
 u32 hw_rst_status;
 u32 hw_rst_reason;
@@ -365,10 +364,6 @@ void hw_init()
 	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
 	bool nx_hoag = fuse_read_hw_type() == FUSE_NX_HW_TYPE_HOAG;
 
-	// Bootrom stuff we skipped by going through rcm.
-	// _config_se_brom();
-	//FUSE(FUSE_PRIVATEKEYDISABLE) = 0x11;
-
 	// Unset APB2JTAG_OVERRIDE_EN and OBS_OVERRIDE_EN.
 	SYSREG(AHB_AHB_SPARE_REG) &= 0xFFFFFF9F;
 	PMC(APBDEV_PMC_SCRATCH49) &= 0xFFFFFFFC;
@@ -385,9 +380,6 @@ void hw_init()
 
 	// Enable Fuse visibility.
 	clock_enable_fuse(true);
-
-	// Disable Fuse programming.
-	// fuse_disable_program();
 
 	// Enable clocks to Memory controllers and disable AHB redirect.
 	mc_enable();
@@ -433,26 +425,10 @@ void hw_init()
 	// Set arbiter.
 	hw_config_arbiter(false);
 
-	// Initialize External memory controller and configure DRAM parameters.
-	// sdram_init();
-
 	bpmp_mmu_enable();
 
 	// Enable HOST1X used by every display module (DC, VIC, NVDEC, NVENC, TSEC, etc).
 	clock_enable_host1x();
-
-// #ifdef DEBUG_UART_PORT
-// 	// Setup debug uart port.
-// 	#if   (DEBUG_UART_PORT == UART_B)
-// 		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
-// 	#elif (DEBUG_UART_PORT == UART_C)
-// 		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
-// 	#endif
-// 	pinmux_config_uart(DEBUG_UART_PORT);
-// 	clock_enable_uart(DEBUG_UART_PORT);
-// 	uart_init(DEBUG_UART_PORT, DEBUG_UART_BAUDRATE, UART_AO_TX_AO_RX);
-// 	uart_invert(DEBUG_UART_PORT, DEBUG_UART_INVERT, UART_INVERT_TXD);
-// #endif
 }
 
 void hw_deinit(bool coreboot, u32 bl_magic)
@@ -461,20 +437,6 @@ void hw_deinit(bool coreboot, u32 bl_magic)
 
 	// Scale down BPMP clock.
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
-
-// #ifdef BDK_HW_EXTRA_DEINIT
-// 	// Disable temperature sensor, touchscreen, 5V regulators, Joy-Con and VIC.
-// 	vic_end();
-// 	tmp451_end();
-// 	fan_set_duty(0);
-// 	touch_power_off();
-// 	jc_deinit();
-// 	regulator_5v_disable(REGULATOR_5V_ALL);
-// #endif
-
-	// set DRAM clock to 204MHz.
-	// minerva_change_freq(FREQ_204);
-	// nyx_str->mtc_cfg.init_done = 0;
 
 	// Flush/disable MMU cache.
 	bpmp_mmu_disable();
@@ -489,37 +451,8 @@ void hw_deinit(bool coreboot, u32 bl_magic)
 		CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) |= BIT(CLK_Y_APE);
 	}
 
-	// Do coreboot mitigations.
-	// if (coreboot)
-	// {
-	// 	msleep(10);
-
 	clock_disable_cl_dvfs();
 
-	// 	// Disable Joy-con detect in order to restore UART TX.
-	// 	gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
-	// 	gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
-
-	// 	// Reinstate SD controller power.
-	// 	PMC(APBDEV_PMC_NO_IOPOWER) &= ~PMC_NO_IOPOWER_SDMMC1;
-	// }
-
-	// Seamless display or display power off.
-	// switch (bl_magic)
-	// {
-	// case BL_MAGIC_CRBOOT_SLD:;
-	// 	// Set pwm to 0%, switch to gpio mode and restore pwm duty.
-	// 	u32 brightness = display_get_backlight_brightness();
-	// 	display_backlight_brightness(0, 1000);
-	// 	gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_GPIO);
-	// 	display_backlight_brightness(brightness, 0);
-	// 	break;
-	// case BL_MAGIC_L4TLDR_SLD:
-	// 	// Do not disable display or backlight at all.
-	// 	break;
-	// default:
-		// display_end();
 	display_end();
 	clock_disable_host1x();
-	// }
 }

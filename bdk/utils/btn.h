@@ -31,8 +31,8 @@ u8 btn_read_vol();
 u8 btn_read_home();
 u8 btn_wait();
 u8 btn_wait_timeout(u32 time_ms, u8 mask);
-u8 btn_wait_timeout_single(u32 time_ms, u8 mask);
-u8 btn_wait_timeout_single1(u32 time_ms);
+u8 btn_wait_timeout_singleEx(u32 time_ms, u8 mask);
+u8 btn_wait_timeout_single(u32 time_ms);
 u8 btn_wait_for_single();
 u8 btn_wait_for_change_timeout(u32 timeout, u8 initial);
 

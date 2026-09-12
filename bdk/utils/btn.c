@@ -121,7 +121,7 @@ u8 btn_wait_timeout(u32 time_ms, u8 mask)
 	return res;
 }
 
-u8 btn_wait_timeout_single1(u32 time_ms){
+u8 btn_wait_timeout_single(u32 time_ms){
 	u8 btn_prev = btn_read();
 	u8 btn;
 	u32 timeout = get_tmr_ms() + time_ms;
@@ -137,7 +137,7 @@ u8 btn_wait_timeout_single1(u32 time_ms){
 	return(0);
 }
 
-u8 btn_wait_timeout_single(u32 time_ms, u8 mask)
+u8 btn_wait_timeout_singleEx(u32 time_ms, u8 mask)
 {
 	u8 single_button = mask & BTN_SINGLE;
 	mask &= ~BTN_SINGLE;

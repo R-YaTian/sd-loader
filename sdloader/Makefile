@@ -42,7 +42,6 @@ OBJS = $(addprefix $(BUILD_DIR)/$(TARGET)/, \
 	sprintf.o \
 	di.o gfx.o tui.o emmc.o timer.o \
 	diskio.o ff.o ffsystem.o ffunicode.o max17050.o bq24193.o \
-	usb_gadget_ums.o usb_descriptors.o xusbd.o ums.o modchip.o \
 	loader.o modchip.o modchip_toolbox.o files.o )
 
 # startup code must be compiled with lto disabled

@@ -1,5 +1,3 @@
-#include "ums.h"
-
 #include <libs/fatfs/ff.h>
 #include <memory_map.h>
 #include <gfx.h>
@@ -212,12 +210,6 @@ static void clear_screen_except_logo_and_status(){
 	gfx_clear_rect_rot(COL_BLACK, 0, 88, gfx_ctxt.height, gfx_ctxt.width - 80);
 }
 
-static void start_ums(){
-	gfx_con_setpos_rot(0, 0);
-	clear_screen_except_logo_and_status();
-	ums(0, 88);
-}
-
 static void power_off_cb(void *data){
 	deinit();
 	power_set_state(POWER_OFF);
@@ -226,10 +218,6 @@ static void power_off_cb(void *data){
 static void rcm_cb(void *data){
 	deinit();
 	rcm_if_t210_or_off();
-}
-
-static void ums_cb(void *data){
-	start_ums();
 }
 
 static void ofw_cb(void *data){
@@ -278,11 +266,10 @@ static void do_menu(){
 	};
 
 	tui_entry_t menu_more[] = {
-		[0] = TUI_ENTRY_ACTION_NO_BLANK("Reboot RCM", rcm_cb,     NULL, false, &menu_more[1]),
-		[1] = TUI_ENTRY_ACTION_NO_BLANK("UMS",        ums_cb,     NULL, false, &menu_more[2]),
-		[2] = TUI_ENTRY_ACTION_NO_BLANK("Launch payload",      retry_cb,   NULL, false, &menu_more[3]),
-		[3] = TUI_ENTRY_ACTION_NO_BLANK("Toolbox",    toolbox_cb,  NULL, false, &menu_more[4]),
-		[4] = TUI_ENTRY_BACK(NULL),
+		[0] = TUI_ENTRY_ACTION_NO_BLANK("Reboot RCM",     rcm_cb,     NULL, false, &menu_more[1]),
+		[1] = TUI_ENTRY_ACTION_NO_BLANK("Launch payload", retry_cb,   NULL, false, &menu_more[2]),
+		[2] = TUI_ENTRY_ACTION_NO_BLANK("Toolbox",       toolbox_cb,  NULL, false, &menu_more[3]),
+		[3] = TUI_ENTRY_BACK(NULL),
 	};
 
 	tui_entry_t menu_entries[] = {

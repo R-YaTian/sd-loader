@@ -32,7 +32,6 @@
 #include <soc/timer.h>
 #include <soc/t210.h>
 #include <mem/mc.h>
-#include <mem/sdram.h>
 #include <power/bq24193.h>
 #include <power/max77620.h>
 #include <power/max7762x.h>

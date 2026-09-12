@@ -23,8 +23,6 @@
 #include <mem/emc.h>
 #include <mem/heap.h>
 #include <mem/mc.h>
-#include <mem/sdram.h>
-#include <mem/smmu.h>
 #include <module.h>
 #include <power/bm92t36.h>
 #include <power/bq24193.h>
@@ -35,7 +33,6 @@
 #include <power/regulator_5v.h>
 #include <rtc/max77620-rtc.h>
 #include <sec/se.h>
-#include <sec/tsec.h>
 #include <soc/actmon.h>
 #include <soc/bpmp.h>
 #include <soc/ccplex.h>

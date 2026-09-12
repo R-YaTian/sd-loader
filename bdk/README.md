@@ -7,6 +7,7 @@
 - soc: Remove `kfuse`
 - display: Remove `vic`
 - ianos: Remove entirely
-- mem: Remove `minerva`
+- mem: Remove `minerva`, `mtc_table.h`, `smmu`, `sdram`, `sdram_config`
 - input: Remove entirely
 - libs: Remove `lvgl` and `compr`
+- sec: Remove `tsec`, `tsec_t210.h`

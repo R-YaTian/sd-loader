@@ -30,7 +30,6 @@
 #include <power/max77812.h>
 #include <rtc/max77620-rtc.h>
 #include <sec/se.h>
-#include <soc/actmon.h>
 #include <soc/bpmp.h>
 #include <soc/clock.h>
 #include <soc/fuse.h>
@@ -42,7 +41,6 @@
 #include <soc/pmc.h>
 #include <soc/timer.h>
 #include <soc/t210.h>
-#include <soc/uart.h>
 #include <storage/emmc.h>
 #include <storage/mbr_gpt.h>
 #include <storage/mmc.h>

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -28,7 +28,6 @@
 #include <soc/i2c.h>
 #include <soc/pinmux.h>
 #include <soc/pmc.h>
-#include <soc/uart.h>
 #include <soc/timer.h>
 #include <soc/t210.h>
 #include <mem/mc.h>
@@ -38,8 +37,6 @@
 #include <storage/sd.h>
 #include <storage/sdmmc.h>
 #include <utils/util.h>
-
-extern boot_cfg_t b_cfg;
 
 u32 hw_rst_status;
 u32 hw_rst_reason;
@@ -101,6 +98,8 @@ void hw_config_arbiter(bool reset)
 		ARB_PRI(ARB_PRIO_DMA_PRIORITY) = 0x320369B;
 	}
 }
+
+#define UART_A 0
 
 // The uart is skipped for Copper, Hoag and Calcio. Used in Icosa, Iowa and Aula.
 static void _config_gpios(bool nx_hoag)

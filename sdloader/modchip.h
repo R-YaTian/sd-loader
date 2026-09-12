@@ -53,7 +53,6 @@ typedef struct{
 typedef struct{
 	u32 magic1;
 	u32 magic2;
-	u8 default_payload_vol:3;
 	u8 default_action:2;
 	u8 disable_ofw_btn_combo:1;
 	u8 disable_menu_btn_combo:1; // DO NOT USE, menu can't be forced to show otherwise
@@ -64,14 +63,6 @@ typedef enum{
 	MODCHIP_DEFAULT_ACTION_OFW     = 0x1,
 	MODCHIP_DEFAULT_ACTION_MENU    = 0x2,
 }modchip_default_action;
-
-typedef enum{
-	MODCHIP_PAYLOAD_VOL_AUTO      = 0x0,
-	MODCHIP_PAYLOAD_VOL_SD        = 0x1,
-	MODCHIP_PAYLOAD_VOL_BOOT1_1MB = 0x2,
-	MODCHIP_PAYLOAD_VOL_BOOT1     = 0x3,
-	MODCHIP_PAYLOAD_VOL_GPP       = 0x4,
-}modchip_payload_vol;
 
 bool modchip_get_cfg(sd_loader_cfg_t *cfg);
 void modchip_get_cfg_or_default(sd_loader_cfg_t *cfg);

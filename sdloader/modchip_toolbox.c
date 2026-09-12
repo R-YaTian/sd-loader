@@ -260,11 +260,11 @@ static void update_ipl(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
 }
 
 static void update_cb(const char *path, u32 size_max, tui_action_modifying_cb_t cb, tui_entry_menu_t *menu){
-	u8 drive;
+	u8 drive = 0;
 	FIL f;
 	FRESULT res;
 
-	res = open_file_on_any(path, &f, &drive);
+	res = open_file_on(path, &f, drive);
 
 	if(res != FR_OK){
 		handle_file_error(path, drive, res);
@@ -306,42 +306,6 @@ static void fw_rollback_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *men
 static void ipl_update_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
 	const char *path = "sdloader.enc";
 	update_cb(path, MODCHIP_BL_MAX_SIZE, update_ipl, menu);
-}
-
-static void default_vol_update(sd_loader_cfg_t *vol_cfg, tui_entry_t *entry, tui_entry_menu_t *menu){
-	static const char* default_vol_names[] = {
-		[MODCHIP_PAYLOAD_VOL_BOOT1]     = "BOOT1",
-		[MODCHIP_PAYLOAD_VOL_BOOT1_1MB] = "BOOT1 (1MB)",
-		[MODCHIP_PAYLOAD_VOL_SD]        = "SD",
-		[MODCHIP_PAYLOAD_VOL_GPP]       = "GPP",
-		[MODCHIP_PAYLOAD_VOL_AUTO]      = "Auto",
-	};
-
-	s_printf((char*)entry->title.text, "Payload vol. %s", default_vol_names[vol_cfg->default_payload_vol]);
-}
-
-static void default_vol_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
-	sd_loader_cfg_t *cfg = (sd_loader_cfg_t*)data;
-
-	switch(cfg->default_payload_vol){
-	case MODCHIP_PAYLOAD_VOL_AUTO:
-		cfg->default_payload_vol = MODCHIP_PAYLOAD_VOL_SD;
-		break;
-	case MODCHIP_PAYLOAD_VOL_SD:
-		cfg->default_payload_vol = MODCHIP_PAYLOAD_VOL_BOOT1_1MB;
-		break;
-	case MODCHIP_PAYLOAD_VOL_BOOT1_1MB:
-		cfg->default_payload_vol = MODCHIP_PAYLOAD_VOL_BOOT1;
-		break;
-	case MODCHIP_PAYLOAD_VOL_BOOT1:
-		cfg->default_payload_vol = MODCHIP_PAYLOAD_VOL_GPP;
-		break;
-	case MODCHIP_PAYLOAD_VOL_GPP:
-		cfg->default_payload_vol = MODCHIP_PAYLOAD_VOL_AUTO;
-		break;
-	}
-
-	default_vol_update(cfg, entry, menu);
 }
 
 static void save_settings_cb(void *data){
@@ -417,20 +381,17 @@ static void ipl_settings_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *me
 		.cfg = cfg,
 	};
 
-	char default_vol_str[30] = "";
 	char default_action_str[30] = "";
 	char ofw_btn_str[30] = "";
 
 	tui_entry_t menu_entries[] = {
-		[0] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK(default_vol_str, default_vol_cb, &temp_cfg, false, &menu_entries[1]),
-		[1] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK(default_action_str, default_action_cb, &temp_cfg, false, &menu_entries[2]),
-		[2] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK(ofw_btn_str, ofw_btn_cb, &temp_cfg, false, &menu_entries[3]),
-		[3] = TUI_ENTRY_TEXT("", &menu_entries[4]),
-		[4] = TUI_ENTRY_ACTION_NO_BLANK("Save", save_settings_cb, &save_settings_data, false, &menu_entries[5]),
-		[5] = TUI_ENTRY_TEXT("\n", &menu_entries[6]),
-		[6] = TUI_ENTRY_BACK(NULL),
+		[0] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK(default_action_str, default_action_cb, &temp_cfg, false, &menu_entries[1]),
+		[1] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK(ofw_btn_str, ofw_btn_cb, &temp_cfg, false, &menu_entries[2]),
+		[2] = TUI_ENTRY_TEXT("", &menu_entries[3]),
+		[3] = TUI_ENTRY_ACTION_NO_BLANK("Save", save_settings_cb, &save_settings_data, false, &menu_entries[4]),
+		[4] = TUI_ENTRY_TEXT("\n", &menu_entries[5]),
+		[5] = TUI_ENTRY_BACK(NULL),
 	};
-
 
 	tui_entry_menu_t settings_menu = {
 		.entries    = menu_entries,
@@ -447,9 +408,8 @@ static void ipl_settings_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *me
 		.show_title = true,
 	};
 
-	default_vol_update(cfg, &menu_entries[0], &settings_menu);
-	default_action_update(cfg, &menu_entries[1], &settings_menu);
-	ofw_btn_update(cfg, &menu_entries[2], &settings_menu);
+	default_action_update(cfg, &menu_entries[0], &settings_menu);
+	ofw_btn_update(cfg, &menu_entries[1], &settings_menu);
 
 	tui_menu_start_rot(&settings_menu);
 

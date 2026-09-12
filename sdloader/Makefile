@@ -37,11 +37,11 @@ PAYLOAD_NAME = $(TARGET)
 OBJS = $(addprefix $(BUILD_DIR)/$(TARGET)/, \
     main.o irq.o \
 	heap.o mc.o bpmp.o clock.o fuse.o se.o hw_init.o gpio.o pinmux.o i2c.o util.o btn.o \
-    max7762x.o bq24193.o max77620-rtc.o \
+    max7762x.o bq24193.o \
     sdmmc.o sd.o sdmmc_driver.o \
 	sprintf.o \
 	di.o gfx.o tui.o emmc.o timer.o \
-	diskio.o ff.o ffsystem.o ffunicode.o max17050.o bq24193.o \
+	diskio.o ff.o ffsystem.o ffunicode.o max17050.o \
 	loader.o modchip.o modchip_toolbox.o files.o )
 
 # startup code must be compiled with lto disabled

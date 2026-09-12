@@ -15,12 +15,6 @@ typedef enum{
 extern const char* drive_friendly_names[4];
 
 FRESULT open_file_on(const char *path, FIL *f, u8 drive);
-FRESULT open_file_on_any(const char *path, FIL *f, u8 *drive);
-FRESULT find_and_open_file_on(const char *pattern, char *found_path,
-                               u32 path_size, FIL *f, u8 drive);
-
-FRESULT find_and_open_file_on_any(const char *pattern, char *found_path,
-                                   u32 path_size, FIL *f, u8 *drive);
 FRESULT unmount_drive(void);
 
 #endif

@@ -17,8 +17,6 @@ __attribute__((noreturn)) void ipl_main(){
 	pivot_stack(IPL_STACK_TOP);
 	heap_init((void*)IPL_HEAP_START);
 
-	mc_enable_ahb_redirect();
-
 	main();
 
 	power_set_state(POWER_OFF);

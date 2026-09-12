@@ -5,5 +5,4 @@ CompileFlags:
     - -I.\sdloader\gfx
     - -DGFX_INC="../sdloader/gfx/gfx.h"
     - -DMAX_PAYLOAD_SIZE=65536
-    - -DBDK_MC_ENABLE_AHB_REDIRECT
     - -Wno-main-return-type

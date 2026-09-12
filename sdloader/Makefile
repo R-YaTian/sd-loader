@@ -53,7 +53,7 @@ OBJS_NO_LTO_S = $(addprefix $(BUILD_DIR)/$(TARGET)/, \
 GFX_INC = '"../sdloader/$(GFX_DIR)/gfx.h"'
 INC_DIR = -I./$(BDK_DIR) -I./$(SRC_DIR) -I./$(GFX_DIR) -I./$(GENERATED)
 
-CUSTOMDEFINES += -DGFX_INC=$(GFX_INC) -DMAX_PAYLOAD_SIZE=$(MAX_PAYLOAD_SIZE) -DBDK_MC_ENABLE_AHB_REDIRECT # BDK_MC_ENABLE_AHB_REDIRECT for iram access
+CUSTOMDEFINES += -DGFX_INC=$(GFX_INC) -DMAX_PAYLOAD_SIZE=$(MAX_PAYLOAD_SIZE)
 
 WARNINGS := -Wno-main-return-type -Wno-main -Wall -Wno-array-bounds -Wno-stringop-overread -Wno-stringop-overflow
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb-interwork -mthumb -Wstack-usage=1536

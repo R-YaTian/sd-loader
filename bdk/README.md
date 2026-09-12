@@ -4,7 +4,7 @@
 - usb: Remove entirely
 - thermal: Remove entirely
 - storage: Remove `ramdisk`, `nx_emmc_bis`
-- soc: Remove `kfuse`, `ccplex`, `actmon`
+- soc: Remove `kfuse`, `ccplex`, `actmon`, `uart`
 - display: Remove `vic`
 - ianos: Remove entirely
 - mem: Remove `minerva`, `mtc_table.h`, `smmu`, `sdram`, `sdram_config`, `emc_t210.h`

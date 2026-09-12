@@ -177,7 +177,7 @@ static void _mbist_workaround()
 	I2S(I2S5_CG)   &= ~I2S_CG_SLCG_ENABLE;
 
 	// Set SLCG overrides.
-	DISPLAY_A(_DIREG(DC_COM_DSC_TOP_CTL)) |= 4; // DSC_SLCG_OVERRIDE.
+	DISPLAY_A(DC_COM_DSC_TOP_CTL) |= 4; // DSC_SLCG_OVERRIDE.
 	VIC(VIC_THI_SLCG_OVERRIDE_LOW_A) = 0xFFFFFFFF;
 	usleep(2);
 

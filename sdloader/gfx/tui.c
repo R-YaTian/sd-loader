@@ -29,9 +29,9 @@ static bool tui_entry_is_selectable(tui_entry_t *entry){
 }
 
 static void update_brightness(u32 brightness){
-	if(display_get_backlight_brightness() != brightness){
-		display_backlight_brightness(brightness, 1000);
-	}
+	//if(display_get_backlight_brightness() != brightness){
+	display_backlight_brightness(brightness, 1000);
+	//}
 }
 
 void tui_dim_on_timeout(u8 btn){

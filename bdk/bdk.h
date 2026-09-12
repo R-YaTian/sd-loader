@@ -20,7 +20,6 @@
 #include <memory_map.h>
 
 #include <display/di.h>
-#include <mem/emc.h>
 #include <mem/heap.h>
 #include <mem/mc.h>
 #include <module.h>

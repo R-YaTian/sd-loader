@@ -4,3 +4,8 @@
 - usb: Remove entirely
 - thermal: Remove entirely
 - storage: Remove `ramdisk`, `nx_emmc_bis`
+- soc: Remove `kfuse`
+- display: Remove `vic`
+- ianos: Remove entirely
+- mem: Remove `minerva`
+- input: Remove entirely

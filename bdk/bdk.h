@@ -20,14 +20,9 @@
 #include <memory_map.h>
 
 #include <display/di.h>
-#include <display/vic.h>
-#include <input/als.h>
-#include <input/joycon.h>
-#include <input/touch.h>
 #include <mem/emc.h>
 #include <mem/heap.h>
 #include <mem/mc.h>
-#include <mem/minerva.h>
 #include <mem/sdram.h>
 #include <mem/smmu.h>
 #include <module.h>
@@ -50,7 +45,6 @@
 #include <soc/hw_init.h>
 #include <soc/i2c.h>
 #include <soc/irq.h>
-#include <soc/kfuse.h>
 #include <soc/pinmux.h>
 #include <soc/pmc.h>
 #include <soc/timer.h>
@@ -59,7 +53,6 @@
 #include <storage/emmc.h>
 #include <storage/mbr_gpt.h>
 #include <storage/mmc.h>
-#include <storage/nx_emmc_bis.h>
 #include <storage/sd.h>
 #include <storage/sdmmc.h>
 #include <utils/aarch64_util.h>

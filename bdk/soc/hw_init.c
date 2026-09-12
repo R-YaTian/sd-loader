@@ -19,9 +19,6 @@
 
 #include <soc/hw_init.h>
 #include <display/di.h>
-#include <display/vic.h>
-#include <input/joycon.h>
-#include <input/touch.h>
 #include <sec/se.h>
 #include <sec/se_t210.h>
 #include <soc/bpmp.h>
@@ -35,7 +32,6 @@
 #include <soc/timer.h>
 #include <soc/t210.h>
 #include <mem/mc.h>
-#include <mem/minerva.h>
 #include <mem/sdram.h>
 #include <power/bq24193.h>
 #include <power/max77620.h>
@@ -151,6 +147,8 @@ static void _config_pmc_scratch()
 	PMC(APBDEV_PMC_SCRATCH190) &= 0xFFFFFFFE; // Unset WDT_DURING_BR.
 	PMC(APBDEV_PMC_SECURE_SCRATCH21) |= PMC_FUSE_PRIVATEKEYDISABLE_TZ_STICKY_BIT;
 }
+
+#define VIC_THI_SLCG_OVERRIDE_LOW_A 0x8C
 
 static void _mbist_workaround()
 {

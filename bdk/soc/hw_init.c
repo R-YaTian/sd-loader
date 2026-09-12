@@ -35,7 +35,6 @@
 #include <power/bq24193.h>
 #include <power/max77620.h>
 #include <power/max7762x.h>
-#include <power/regulator_5v.h>
 #include <storage/sd.h>
 #include <storage/sdmmc.h>
 #include <utils/util.h>

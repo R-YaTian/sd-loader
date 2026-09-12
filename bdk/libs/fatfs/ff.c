@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------/
-/  FatFs - Generic FAT Filesystem Module  R0.16 w/patch 2                     /
+/  FatFs - Generic FAT Filesystem Module  R0.16 w/patch 2/dirty               /
 /-----------------------------------------------------------------------------/
 /
 / Copyright (C) 2025, ChaN, all right reserved.
@@ -2220,7 +2220,7 @@ static void init_alloc_info (
 
 
 
-#if !FF_FS_READONLY || FF_FS_RPATH
+#if !FF_FS_READONLY
 /*------------------------------------------------*/
 /* exFAT: Load the object's directory entry block */
 /*------------------------------------------------*/

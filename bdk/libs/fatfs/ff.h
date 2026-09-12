@@ -33,6 +33,9 @@ extern "C" {
 #error Wrong configuration file (ffconf.h).
 #endif
 
+/* Custom modifications Start */
+#define ALIGN8 __attribute__((aligned(8)))
+/* Custom modifications End */
 
 /* Integer types used for FatFs API */
 
@@ -185,7 +188,7 @@ typedef struct {
 	FFXCWDS	xcwds2;		/* Working buffer to follow the path */
 #endif
 #endif
-	BYTE	win[FF_MAX_SS];	/* Disk access window for directory, FAT (and file data in tiny cfg) */
+	ALIGN8 BYTE win[FF_MAX_SS];	/* Disk access window for directory, FAT (and file data in tiny cfg) */
 } FATFS;
 
 
@@ -230,7 +233,7 @@ typedef struct {
 	DWORD*	cltbl;		/* Pointer to the cluster link map table (nulled on open; set by application) */
 #endif
 #if !FF_FS_TINY
-	BYTE	buf[FF_MAX_SS];	/* File private data read/write window */
+	ALIGN8 BYTE buf[FF_MAX_SS];	/* File private data read/write window */
 #endif
 } FIL;
 

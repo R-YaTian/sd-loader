@@ -275,7 +275,7 @@ void power_set_state(power_state_t state)
 	sd_end();
 
 	// De-initialize and power down various hardware.
-	hw_deinit(false, 0);
+	hw_deinit(false);
 
 	// Set power state.
 	switch (state)
@@ -286,7 +286,7 @@ void power_set_state(power_state_t state)
 		break;
 
 	case REBOOT_BYPASS_FUSES:
-		panic(0x21); // Bypass fuse programming in package1.
+		panic(PMC_NX_PANIC_BYPASS_FUSES); // Bypass fuse programming in package1.
 		break;
 
 	case POWER_OFF:
@@ -320,6 +320,7 @@ void power_set_state_ex(void *param)
 	power_set_state(*state);
 }
 
+/* Custom modifications Start */
 bool is_t210(){
 	return hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
 }
@@ -331,3 +332,4 @@ void rcm_if_t210_or_off(){
 		power_set_state(POWER_OFF);
 	}
 }
+/* Custom modifications End */

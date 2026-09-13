@@ -28,7 +28,6 @@
 #include <power/max77620.h>
 #include <power/max7762x.h>
 #include <power/max77812.h>
-#include <rtc/max77620-rtc.h>
 #include <sec/se.h>
 #include <soc/bpmp.h>
 #include <soc/clock.h>

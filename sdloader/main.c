@@ -53,11 +53,12 @@ static sd_loader_cfg_t sdloader_cfg;
 static payload_ctx_t payload_ctx = {0};
 
 
-static void deinit(){
+static void deinit()
+{
 	unmount_drive();
 	sd_end();
 	emmc_end();
-	hw_deinit(false, 0);
+	hw_deinit(false);
 }
 
 static SD_LOADER_STATUS read_payload(FIL *f){

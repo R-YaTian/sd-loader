@@ -54,8 +54,10 @@ void panic(u32 val);
 void power_set_state(power_state_t state);
 void power_set_state_ex(void *param);
 
+/* Custom modifications Start */
 // Additional utility functions
 void rcm_if_t210_or_off();
 bool is_t210();
+/* Custom modifications End */
 
 #endif

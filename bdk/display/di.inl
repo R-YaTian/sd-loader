@@ -548,7 +548,7 @@ static const reg_cfg_t _di_winD_log[] = {
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_D_ACT_REQ},
 };
 
-
+/* Custom modifications Start */
 #define WIN_ZOOM   4
 #define WIN_WIDTH  180
 #define WIN_HEIGHT 320
@@ -611,3 +611,4 @@ static const reg_cfg_t _di_winA_pitch_small_palette[] = {
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE | WIN_A_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ}
 };
+/* Custom modifications End */

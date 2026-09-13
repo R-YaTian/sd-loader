@@ -20,7 +20,6 @@
 #include "di.h"
 #include <power/max77620.h>
 #include <power/max7762x.h>
-#include <mem/heap.h>
 #include <soc/clock.h>
 #include <soc/fuse.h>
 #include <soc/gpio.h>
@@ -33,7 +32,9 @@
 
 #include "di.inl"
 
+/* Custom modifications Start */
 static bool _display_init_done = false;
+/* Custom modifications End */
 static bool _nx_aula      = false;
 static u32  _panel_id     = 0;
 static u32  _panel_id_raw = 0;
@@ -600,8 +601,9 @@ void display_init()
 
 	// Setup video mode.
 	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_dc_video_mode_config, ARRAY_SIZE(_di_dc_video_mode_config));
-
+/* Custom modifications Start */
 	_display_init_done = true;
+/* Custom modifications End */
 }
 
 void display_backlight_pwm_init()
@@ -807,6 +809,7 @@ skip_panel_deinit:
 	max7762x_regulator_enable(REGULATOR_LDO0, false);
 }
 
+/* Custom modifications Start */
 void display_end()
 { 
 	if (_display_init_done)
@@ -815,6 +818,7 @@ void display_end()
 		_display_init_done = false;
 	}
 };
+/* Custom modifications End */
 
 u32 display_get_verbose_panel_id()
 {
@@ -1054,6 +1058,7 @@ void display_cursor_deinit()
 	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
 }
 
+/* Custom modifications Start */
 u32 *display_init_window_a_pitch_small_palette(const u32 *lut, const u32 lut_entries)
 {
 	memset((u32*)IPL_SMALL_FB_ADDR, 253, IPL_SMALL_FB_SZ);
@@ -1064,3 +1069,4 @@ u32 *display_init_window_a_pitch_small_palette(const u32 *lut, const u32 lut_ent
 	usleep(3500);
 	return (u32*)IPL_SMALL_FB_ADDR;
 }
+/* Custom modifications End */

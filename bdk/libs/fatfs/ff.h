@@ -188,7 +188,9 @@ typedef struct {
 	FFXCWDS	xcwds2;		/* Working buffer to follow the path */
 #endif
 #endif
+/* Custom modifications Start */
 	ALIGN8 BYTE win[FF_MAX_SS];	/* Disk access window for directory, FAT (and file data in tiny cfg) */
+/* Custom modifications End */
 } FATFS;
 
 
@@ -233,7 +235,9 @@ typedef struct {
 	DWORD*	cltbl;		/* Pointer to the cluster link map table (nulled on open; set by application) */
 #endif
 #if !FF_FS_TINY
+/* Custom modifications Start */
 	ALIGN8 BYTE buf[FF_MAX_SS];	/* File private data read/write window */
+/* Custom modifications End */
 #endif
 } FIL;
 

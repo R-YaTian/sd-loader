@@ -897,7 +897,9 @@ u32 *display_init_window_a_pitch_vic();
 u32 *display_init_window_a_pitch_inv();
 u32 *display_init_window_a_block();
 u32 *display_init_window_d_console();
+/* Custom modifications Start */
 u32 *display_init_window_a_pitch_small_palette(const u32* lut, const u32 lut_entries);
+/* Custom modifications End */
 
 void display_window_disable(u32 window);
 

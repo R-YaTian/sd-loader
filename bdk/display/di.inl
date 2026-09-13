@@ -571,29 +571,6 @@ static const reg_cfg_t _di_winD_log[] = {
 #define WIN_POS_X ((720 / 2) - ((WIN_ZOOM * WIN_WIDTH) / 2))
 #define PIXELS_PER_BYTE 1
 
-static const reg_cfg_t _di_winA_pitch_small[] = {
-	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
-	{DC_WIN_WIN_OPTIONS, 0},
-	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE},
-	{DC_WIN_COLOR_DEPTH, WIN_COLOR_DEPTH_B8G8R8A8}, // NX Default: T_A8B8G8R8, WIN_COLOR_DEPTH_R8G8B8A8.
-	{DC_WIN_POSITION, V_POSITION(WIN_POS_Y) | H_POSITION(WIN_POS_X)},
-	{DC_WIN_H_INITIAL_DDA, 0},
-	{DC_WIN_V_INITIAL_DDA, 0},
-	{DC_WIN_PRESCALED_SIZE, V_PRESCALED_SIZE(WIN_HEIGHT)  | H_PRESCALED_SIZE(WIN_WIDTH)},
-	{DC_WIN_DDA_INC,        V_DDA_INC(WIN_DDA)            | H_DDA_INC(WIN_DDA)}, // 1.0x.
-	{DC_WIN_SIZE,           V_SIZE(WIN_HEIGHT * WIN_ZOOM) | H_SIZE(WIN_WIDTH * WIN_ZOOM)},
-	{DC_WIN_LINE_STRIDE,    UV_LINE_STRIDE(WIN_WIDTH * 2) | LINE_STRIDE(WIN_WIDTH * WIN_ZOOM)}, // 720*2x720*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
-	{DC_WIN_BUFFER_CONTROL, BUFFER_CONTROL_HOST},
-	{DC_WINBUF_SURFACE_KIND, PITCH},
-	{DC_WINBUF_START_ADDR, IPL_SMALL_FB_ADDR}, // Framebuffer address.
-	{DC_WINBUF_ADDR_H_OFFSET, 0},
-	{DC_WINBUF_ADDR_V_OFFSET, 0},
-	{DC_WIN_WIN_OPTIONS, WIN_ENABLE}, // Enable window AD.
-	{DC_CMD_DISPLAY_COMMAND, DISP_CTRL_MODE_C_DISPLAY}, // Continuous display.
-	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE | WIN_A_UPDATE},
-	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ}
-};
-
 static const reg_cfg_t _di_winA_pitch_small_palette[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
@@ -608,9 +585,9 @@ static const reg_cfg_t _di_winA_pitch_small_palette[] = {
 	{DC_WIN_LINE_STRIDE,    LINE_STRIDE(((WIN_WIDTH + PIXELS_PER_BYTE - 1) / PIXELS_PER_BYTE + 0xf) & ~0xf)},
 	{DC_WIN_BUFFER_CONTROL, BUFFER_CONTROL_HOST},
 	{DC_WINBUF_SURFACE_KIND, PITCH},
-	
+
 	// 0x00BBGGRR
-	{DC_WINC_COLOR_PALETTE + 243, 0x3d3d3d},    // dark dark grey
+	{DC_WINC_COLOR_PALETTE + 243, 0x3d3d3d},  // dark dark grey
 	{DC_WINC_COLOR_PALETTE + 244, 0x0000b0},  // dark red
 	{DC_WINC_COLOR_PALETTE + 245, 0x00940b},  // dark green
 	{DC_WINC_COLOR_PALETTE + 246, 0x0093ff},  // orange
@@ -624,7 +601,7 @@ static const reg_cfg_t _di_winA_pitch_small_palette[] = {
 	{DC_WINC_COLOR_PALETTE + 254, 0xffffff},  // white
 	{DC_WINC_COLOR_PALETTE + 255, 0x737373},  // grey
 	{DC_WINC_PALETTE_COLOR_EXT, 0x0},
-	
+
 	{DC_WINBUF_START_ADDR, IPL_SMALL_FB_ADDR}, // Framebuffer address.
 	{DC_WINBUF_ADDR_H_OFFSET, 0},
 	{DC_WINBUF_ADDR_V_OFFSET, 0},

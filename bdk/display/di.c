@@ -1054,13 +1054,6 @@ void display_cursor_deinit()
 	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
 }
 
-u32 *display_init_window_a_pitch_small()
-{
-	memset((u32*)IPL_SMALL_FB_ADDR, 0, IPL_SMALL_FB_SZ);
-	reg_write_array((u32*)DISPLAY_A_BASE, _di_winA_pitch_small, ARRAY_SIZE(_di_winA_pitch_small));
-	return (u32*)DISPLAY_A(DC_WINBUF_START_ADDR);
-}
-
 u32 *display_init_window_a_pitch_small_palette(const u32 *lut, const u32 lut_entries)
 {
 	memset((u32*)IPL_SMALL_FB_ADDR, 253, IPL_SMALL_FB_SZ);

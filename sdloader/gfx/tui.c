@@ -28,20 +28,25 @@ static bool tui_entry_is_selectable(tui_entry_t *entry){
 	}
 }
 
-static void update_brightness(u32 brightness){
-	//if(display_get_backlight_brightness() != brightness){
-	display_backlight_brightness(brightness, 1000);
-	//}
-}
-
 void tui_dim_on_timeout(u8 btn){
 	static u32 time = 0;
-	if(btn){
-		time = get_tmr_ms();
-		update_brightness(128);
-	}else{
-		if(get_tmr_ms() - time > DIM_TIMEOUT){
-			update_brightness(32);
+	static bool initialized = false;
+	u32 now = get_tmr_ms();
+
+	if (btn || !initialized)
+	{
+		time = now;
+		initialized = true;
+		if (btn)
+		{
+			display_backlight_brightness(128, 1000);
+		}
+	}
+	else
+	{
+		if (now - time > DIM_TIMEOUT)
+		{
+			display_backlight_brightness(32, 1000);
 		}
 	}
 }

@@ -42,7 +42,7 @@
 #include <soc/t210.h>
 #include <storage/emmc.h>
 #include <storage/mbr_gpt.h>
-#include <storage/mmc.h>
+#include <storage/mmc_def.h>
 #include <storage/sd.h>
 #include <storage/sdmmc.h>
 #include <utils/aarch64_util.h>

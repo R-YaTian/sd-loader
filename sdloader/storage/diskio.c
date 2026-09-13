@@ -9,21 +9,19 @@
 
 #include <libs/fatfs/ff.h>
 #include <libs/fatfs/diskio.h>		/* Declarations of disk functions */
+#include <storage/sdmmc.h>
 #include <storage/emmc.h>
 #include <storage/sd.h>
-#include <storage/sdmmc.h>
-
-/* Definitions of physical drive number for each drive */
-
-
 
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/
 
-static bool ensure_partition(BYTE pdrv){
+static bool ensure_partition(BYTE pdrv)
+{
 	u8 part;
-	switch (pdrv) {
+	switch (pdrv)
+	{
 	case DEV_BOOT1:
 	case DEV_BOOT1_1MB:
 		part = EMMC_BOOT1;
@@ -38,8 +36,9 @@ static bool ensure_partition(BYTE pdrv){
 		return true;
 	}
 
-	if(emmc_storage.partition != part){
-		return emmc_set_partition(part) != 0;
+	if (emmc_storage.partition != part)
+	{
+		return emmc_set_partition(part) == 0;
 	}
 	return true;
 }
@@ -51,40 +50,36 @@ DSTATUS disk_status (
 	return 0;
 }
 
-
-
 /*-----------------------------------------------------------------------*/
 /* Inidialize a Drive                                                    */
 /*-----------------------------------------------------------------------*/
 
 DSTATUS disk_initialize (
-	BYTE pdrv				/* Physical drive nmuber to identify the drive */
+	BYTE pdrv		/* Physical drive nmuber to identify the drive */
 )
 {
-	bool res = true;
+	bool failed = false;
 	switch (pdrv) {
 	case DEV_SD:
-		res &= sd_initialize(false);
+		failed |= sd_initialize(false);
 		break;
 	case DEV_BOOT1:
 	case DEV_BOOT1_1MB:
-		res &= emmc_initialize(false);
-		res &= emmc_set_partition(EMMC_BOOT1);
+		failed |= emmc_initialize(false);
+		failed |= emmc_set_partition(EMMC_BOOT1);
 		break;
 	case DEV_BOOT0:
-		res &= emmc_initialize(false);
-		res &= emmc_set_partition(EMMC_BOOT0);
+		failed |= emmc_initialize(false);
+		failed |= emmc_set_partition(EMMC_BOOT0);
 		break;
 	case DEV_GPP:
-		res &= emmc_initialize(false);
-		res &= emmc_set_partition(0);
+		failed |= emmc_initialize(false);
+		failed |= emmc_set_partition(0);
 		break;
 	}
 
-	return res ? 0 : STA_NOINIT;
+	return !failed ? 0 : STA_NOINIT;
 }
-
-
 
 /*-----------------------------------------------------------------------*/
 /* Read Sector(s)                                                        */
@@ -100,7 +95,8 @@ DRESULT disk_read (
 	sdmmc_storage_t *storage = &sd_storage;
 	u32 actual_sector = sector;
 
-	switch (pdrv) {
+	switch (pdrv)
+	{
 	case DEV_BOOT0:
 	case DEV_BOOT1:
 	case DEV_GPP:
@@ -114,7 +110,7 @@ DRESULT disk_read (
 
 	ensure_partition(pdrv);
 
-	return sdmmc_storage_read(storage, actual_sector, count, buff) ? RES_OK : RES_ERROR;
+	return sdmmc_storage_read(storage, actual_sector, count, buff) == 0 ? RES_OK : RES_ERROR;
 }
 
 DRESULT disk_write (
@@ -127,7 +123,8 @@ DRESULT disk_write (
 	sdmmc_storage_t *storage = &sd_storage;
 	u32 actual_sector = sector;
 
-	switch (pdrv) {
+	switch (pdrv)
+	{
 	case DEV_BOOT0:
 	case DEV_BOOT1:
 	case DEV_GPP:
@@ -142,11 +139,12 @@ DRESULT disk_write (
 	ensure_partition(pdrv);
 
 	// we only ever want to write to boot0, return error if trying to write to anyting else
-	if(pdrv == DEV_GPP || pdrv == DEV_BOOT1 || pdrv == DEV_BOOT1_1MB || pdrv == DEV_SD){
+	if (pdrv == DEV_GPP || pdrv == DEV_BOOT1 || pdrv == DEV_BOOT1_1MB || pdrv == DEV_SD)
+	{
 		return RES_ERROR;
 	}
 
-	return sdmmc_storage_write(storage, actual_sector, count, (u8*)buff) ? RES_OK : RES_ERROR;
+	return sdmmc_storage_write(storage, actual_sector, count, (u8*)buff) == 0 ? RES_OK : RES_ERROR;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -161,4 +159,3 @@ DRESULT disk_ioctl (
 {
 	return RES_OK;
 }
-

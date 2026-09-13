@@ -28,7 +28,9 @@
 #define SD_DEFAULT_SPEED SD_UHS_DDR208
 #endif
 
+/* Custom modifications Start
 static bool sd_mounted = false;
+-- Custom modifications End */
 static bool sd_init_done = false;
 static bool insertion_event = false;
 static u16  sd_errors[3] = { 0 }; // Init and Read/Write errors.
@@ -37,7 +39,9 @@ static u32  sd_mode = SD_DEFAULT_SPEED;
 
 sdmmc_t sd_sdmmc;
 sdmmc_storage_t sd_storage;
-// FATFS sd_fs;
+/* Custom modifications Start
+FATFS sd_fs;
+-- Custom modifications End */
 
 void sd_error_count_increment(u8 type)
 {
@@ -73,10 +77,12 @@ bool sd_get_card_initialized()
 	return sd_init_done;
 }
 
-// bool sd_get_card_mounted()
-// {
-// 	return sd_mounted;
-// }
+/* Custom modifications Start
+bool sd_get_card_mounted()
+{
+	return sd_mounted;
+}
+-- Custom modifications End */
 
 u32 sd_get_mode()
 {
@@ -103,7 +109,7 @@ int sd_init_retry(bool power_cycle)
 	switch (sd_mode)
 	{
 	case SD_INIT_FAIL: // Reset to max.
-		return 0;
+		return 1;
 
 	case SD_1BIT_HS25:
 		bus_width = SDMMC_BUS_WIDTH_1;
@@ -134,7 +140,7 @@ int sd_init_retry(bool power_cycle)
 	}
 
 	int res = sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, bus_width, type);
-	if (res)
+	if (!res)
 	{
 		sd_init_done    = true;
 		insertion_event = true;
@@ -145,17 +151,17 @@ int sd_init_retry(bool power_cycle)
 	return res;
 }
 
-bool sd_initialize(bool power_cycle)
+int sd_initialize(bool power_cycle)
 {
 	if (power_cycle)
 		sdmmc_storage_end(&sd_storage);
 
-	int res = !sd_init_retry(false);
+	int res = sd_init_retry(false);
 
 	while (true)
 	{
 		if (!res)
-			return true;
+			return 0;
 		else if (!sdmmc_get_sd_inserted()) // SD Card is not inserted.
 		{
 			sd_mode = SD_DEFAULT_SPEED;
@@ -168,52 +174,54 @@ bool sd_initialize(bool power_cycle)
 			if (sd_mode == SD_INIT_FAIL)
 				break;
 			else
-				res = !sd_init_retry(true);
+				res = sd_init_retry(true);
 		}
 	}
 
 	sdmmc_storage_end(&sd_storage);
 
-	return false;
+	return 1;
 }
 
-// bool sd_mount()
-// {
-// 	if (sd_init_done && sd_mounted)
-// 		return true;
+/* Custom modifications Start
+int sd_mount()
+{
+	if (sd_init_done && sd_mounted)
+		return 0;
 
-// 	int res = 0;
+	int res = 0;
 
-// 	if (!sd_init_done)
-// 		res = !sd_initialize(false);
+	if (!sd_init_done)
+		res = sd_initialize(false);
 
-// 	if (res)
-// 	{
-// 		gfx_con.mute = false;
-// 		EPRINTF("Failed to init SD card.");
-// 		if (!sdmmc_get_sd_inserted())
-// 			EPRINTF("Make sure that it is inserted.");
-// 		else
-// 			EPRINTF("SD Card Reader is not properly seated!");
-// 	}
-// 	else
-// 	{
-// 		if (!sd_mounted)
-// 			// res = f_mount(&sd_fs, "0:", 1); // Volume 0 is SD.
-// 		if (res == FR_OK)
-// 		{
-// 			sd_mounted = true;
-// 			return true;
-// 		}
-// 		else
-// 		{
-// 			gfx_con.mute = false;
-// 			EPRINTFARGS("Failed to mount SD card (FatFS Error %d).\nMake sure that a FAT partition exists..", res);
-// 		}
-// 	}
+	if (res)
+	{
+		gfx_con.mute = false;
+		EPRINTF("Failed to init SD card.");
+		if (!sdmmc_get_sd_inserted())
+			EPRINTF("Make sure that it is inserted.");
+		else
+			EPRINTF("SD Card Reader is not properly seated!");
+	}
+	else
+	{
+		if (!sd_mounted)
+			res = f_mount(&sd_fs, "0:", 1); // Volume 0 is SD.
+		if (res == FR_OK)
+		{
+			sd_mounted = true;
+			return 0;
+		}
+		else
+		{
+			gfx_con.mute = false;
+			EPRINTFARGS("Failed to mount SD card (FatFS Error %d).\nMake sure that a FAT partition exists..", res);
+		}
+	}
 
-// 	return false;
-// }
+	return 1;
+}
+-- Custom modifications End */
 
 static void _sd_deinit(bool deinit)
 {
@@ -226,8 +234,10 @@ static void _sd_deinit(bool deinit)
 
 	if (sd_init_done)
 	{
-		// if (sd_mounted)
-			// f_mount(NULL, "0:", 1); // Volume 0 is SD.
+/* Custom modifications Start
+		if (sd_mounted)
+			f_unmount("0:"); // Volume 0 is SD.
+-- Custom modifications End */
 
 		if (deinit)
 		{
@@ -235,61 +245,65 @@ static void _sd_deinit(bool deinit)
 			sd_init_done = false;
 		}
 	}
+/* Custom modifications Start
 	sd_mounted = false;
+-- Custom modifications End */
 }
 
-// void sd_unmount() { _sd_deinit(false); }
 void sd_end()     { _sd_deinit(true); }
+/* Custom modifications Start
+void sd_unmount() { _sd_deinit(false); }
 
-// bool sd_is_gpt()
-// {
-// 	return sd_fs.part_type;
-// }
+bool sd_is_gpt()
+{
+	return sd_fs.part_type;
+}
 
-// void *sd_file_read(const char *path, u32 *fsize)
-// {
-// 	FIL fp;
-// 	if (!sd_get_card_mounted())
-// 		return NULL;
+void *sd_file_read(const char *path, u32 *fsize)
+{
+	FIL fp;
+	if (!sd_get_card_mounted())
+		return NULL;
 
-// 	if (f_open(&fp, path, FA_READ) != FR_OK)
-// 		return NULL;
+	if (f_open(&fp, path, FA_READ) != FR_OK)
+		return NULL;
 
-// 	u32 size = f_size(&fp);
-// 	if (fsize)
-// 		*fsize = size;
+	u32 size = f_size(&fp);
+	if (fsize)
+		*fsize = size;
 
-// 	void *buf = malloc(size);
+	void *buf = malloc(size);
 
-// 	if (f_read(&fp, buf, size, NULL) != FR_OK)
-// 	{
-// 		free(buf);
-// 		f_close(&fp);
+	if (f_read(&fp, buf, size, NULL) != FR_OK)
+	{
+		free(buf);
+		f_close(&fp);
 
-// 		return NULL;
-// 	}
+		return NULL;
+	}
 
-// 	f_close(&fp);
+	f_close(&fp);
 
-// 	return buf;
-// }
+	return buf;
+}
 
-// int sd_save_to_file(const void *buf, u32 size, const char *filename)
-// {
-// 	FIL fp;
-// 	u32 res = 0;
-// 	if (!sd_get_card_mounted())
-// 		return FR_DISK_ERR;
+int sd_save_to_file(const void *buf, u32 size, const char *filename)
+{
+	FIL fp;
+	u32 res = 0;
+	if (!sd_get_card_mounted())
+		return FR_DISK_ERR;
 
-// 	res = f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE);
-// 	if (res)
-// 	{
-// 		EPRINTFARGS("Error (%d) creating file\n%s.\n", res, filename);
-// 		return res;
-// 	}
+	res = f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE);
+	if (res)
+	{
+		EPRINTFARGS("Error (%d) creating file\n%s.\n", res, filename);
+		return res;
+	}
 
-// 	f_write(&fp, buf, size, NULL);
-// 	f_close(&fp);
+	f_write(&fp, buf, size, NULL);
+	f_close(&fp);
 
-// 	return 0;
-// }
+	return 0;
+}
+-- Custom modifications End */

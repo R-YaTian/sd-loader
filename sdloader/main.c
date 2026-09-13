@@ -3,7 +3,7 @@
 #include <gfx.h>
 #include <soc/timer.h>
 #include <storage/emmc.h>
-#include <storage/mmc.h>
+#include <storage/mmc_def.h>
 #include <storage/sd.h>
 #include <storage/sdmmc.h>
 #include <string.h>

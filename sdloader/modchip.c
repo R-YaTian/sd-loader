@@ -4,7 +4,7 @@
 #include <soc/timer.h>
 #include <storage/emmc.h>
 #include <storage/sdmmc.h>
-#include <storage/mmc.h>
+#include <storage/mmc_def.h>
 #include <storage/sdmmc_driver.h>
 #include <string.h>
 #include <libs/fatfs/diskio.h>

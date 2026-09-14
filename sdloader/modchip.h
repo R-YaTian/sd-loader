@@ -6,7 +6,6 @@
 
 // last 64kb of boot0
 #define MODCHIP_BL_START_SECTOR   0x1f80
-// fw descriptor and config live on last sector
 #define MODCHIP_BL_MAX_SIZE       (0x10000 - 0x200)
 
 // last 128kb of boot0
@@ -14,17 +13,18 @@
 #define MODCHIP_FW_MAX_SIZE       0x20000
 
 #define MODCHIP_CMD_SECTOR        0x1
-#define MODCHIP_CMD_OFFSET        0x0
+#define MODCHIP_CMD_SIZE          256
 
+// fw descriptor and config live on last sector
 #define MODCHIP_DESC_SECTOR       0x1fff
-#define MODCHIP_CMD_SECTOR        0x1
-#define MODCHIP_CFG_SECTOR        0x1fff
+#define MODCHIP_CFG_SECTOR        MODCHIP_DESC_SECTOR
 
 #define MODCHIP_DESC_OFFSET       0x0
-#define MODCHIP_CMD_OFFSET        0x0
 #define MODCHIP_CFG_OFFSET        0x100
 
 #define MODCHIP_DESC_SIGNATURE    0x9cabe959
+
+#define MODCHIP_SECTOR_SIZE       512
 
 typedef enum{
 	MODCHIP_CMD_FW_UPDATE = 0x6db92148,
@@ -55,7 +55,6 @@ typedef struct{
 	u32 magic2;
 	u8 default_action:2;
 	u8 disable_ofw_btn_combo:1;
-	u8 disable_menu_btn_combo:1; // DO NOT USE, menu can't be forced to show otherwise
 }sd_loader_cfg_t;
 
 typedef enum{
@@ -76,9 +75,9 @@ bool modchip_write_fw_update_cmd(u32 sector_start, u32 sector_cnt);
 bool modchip_write_rollback_cmd();
 bool modchip_read_desc(modchip_desc_t *desc);
 bool modchip_is_desc_valid(modchip_desc_t *desc);
-bool modchip_write_fw_update(u8 *buf, u32 size);
+bool modchip_write_fw_update(const u8 *buf, u32 size);
 bool modchip_write_fw_update_from_file(FIL *f);
-bool modchip_write_ipl_update(u8 *buf, u32 size);
+bool modchip_write_ipl_update(const u8 *buf, u32 size);
 bool modchip_write_ipl_update_from_file(FIL *f);
 
 #endif

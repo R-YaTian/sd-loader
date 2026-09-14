@@ -15,7 +15,6 @@ static sd_loader_cfg_t default_cfg = {
 	.magic1 = MODCHIP_MAGIC,
 	.magic2 = MODCHIP_MAGIC,
 	.default_action = MODCHIP_DEFAULT_ACTION_PAYLOAD,
-	.disable_menu_btn_combo = false,
 	.disable_ofw_btn_combo = false,
 };
 
@@ -70,128 +69,118 @@ bool modchip_is_cfg_valid(sd_loader_cfg_t *cfg){
 	return true;
 }
 
-bool modchip_clear_cfg(){
+bool modchip_clear_cfg()
+{
 	return modchip_set_cfg(&default_cfg);
 }
 
-static bool modchip_write_cmd(modchip_cmd_t *cmd){
+static bool modchip_write_cmd(modchip_cmd_t *cmd)
+{
 	u8 *buf = (u8 *)SDMMC_UPPER_BUFFER;
 
-	if(disk_read(DEV_BOOT0, buf, MODCHIP_CMD_SECTOR, 1) != RES_OK){
+	if (disk_read(DEV_BOOT0, buf, MODCHIP_CMD_SECTOR, 1) != RES_OK)
+	{
 		return false;
 	}
 
-	memset(buf + MODCHIP_CMD_OFFSET, 0, 0x10);
-	memcpy(buf + MODCHIP_CMD_OFFSET, cmd, sizeof(*cmd));
+	memset(buf, 0, MODCHIP_CMD_SIZE);
+	memcpy(buf, cmd, sizeof(modchip_cmd_t));
 
 	return disk_write(DEV_BOOT0, buf, MODCHIP_CMD_SECTOR, 1) == RES_OK;
 }
 
 // buf must be multiple of 512
-bool modchip_write_fw_update(u8 *buf, u32 size){
-	u32 sec_cnt = (size + 0x1ff) / 0x200;
+bool modchip_write_fw_update(const u8 *buf, u32 size){
+	u32 sec_cnt = (size + MODCHIP_SECTOR_SIZE - 1) / MODCHIP_SECTOR_SIZE;
 
 	// modchip will overwrite our config and fw descriptor when applying update/resetting
 	DRESULT res = disk_write(DEV_BOOT0, buf, MODCHIP_FW_START_SECTOR, sec_cnt);
 
-	if(res == RES_OK){
+	if (res == RES_OK)
+	{
 		// fw image written, now issue fw update command. if this fails, not much we can do
 		return modchip_write_fw_update_cmd(MODCHIP_FW_START_SECTOR, sec_cnt);
-	}else{
+	}
+	else
+	{
 		// fw image write failed, issue reset command so modchip rewrites sdloader atleast, if this fails too, not much we can do
 		modchip_write_rst_cmd();
 		return false;
 	}
 }
 
-bool modchip_write_fw_update_from_file(FIL *f){
+bool modchip_write_fw_update_from_file(FIL *f)
+{
 	FRESULT f_res;
-	bool res = true;
 	u32 size = f_size(f);
+	u32 sectors = (size + MODCHIP_SECTOR_SIZE - 1) / MODCHIP_SECTOR_SIZE;
+	u32 aligned_size = sectors * MODCHIP_SECTOR_SIZE;
+
 	u8 *buf = (u8*)SDMMC_UPPER_BUFFER;
 	u32 br;
 
 	// we can read entire fw update into memory first
-	if(size < SDMMC_UP_BUF_SZ){
-		memset(buf + (size & ~(0x200 - 1)), 0, 0x200);
+	if (aligned_size <= SDMMC_UP_BUF_SZ)
+	{
+		memset(buf + (size & ~(MODCHIP_SECTOR_SIZE - 1)), 0xFF, MODCHIP_SECTOR_SIZE);
 		f_res = f_read(f, buf, size, &br);
-		if(f_res != FR_OK || br != size){
+		if(f_res != FR_OK || br != size)
+		{
 			return false;
 		}
 
 		return modchip_write_fw_update(buf, size);
 	}
 
-	u32 max_btr = SDMMC_UP_BUF_SZ & ~(0x200 - 1);
-	for(u32 i = 0; i < size; i += max_btr){
-		u32 btr = MIN((size - i), max_btr);
-
-		if(btr < max_btr){
-			memset(buf + (btr & ~(0x200 - 1)), 0, 0x200);
-		}
-
-		f_res = f_read(f, buf, btr, &br);
-		if(f_res != FR_OK || br != btr){
-			res = false;
-			break;
-		}
-
-		if(disk_write(DEV_BOOT0, buf, MODCHIP_FW_START_SECTOR + (i / 0x200), (btr + (0x200 - 1)) / 0x200) != RES_OK){
-			res = false;
-			break;
-		}
-	}
-
-	if(res){
-		return modchip_write_fw_update_cmd(MODCHIP_FW_START_SECTOR, (size + (0x200 - 1) / 0x200));
-	}else{
-		modchip_write_rst_cmd();
-		return false;
-	}
+	return false;
 }
 
 // buf must be multiple of 512
-bool modchip_write_ipl_update(u8 *buf, u32 size){
-	u32 sec_cnt = (size + (0x200 - 1)) / 0x200;
-	if(disk_write(DEV_BOOT0, buf, MODCHIP_BL_START_SECTOR, sec_cnt) != RES_OK){
+bool modchip_write_ipl_update(const u8 *buf, u32 size)
+{
+	u32 sec_cnt = (size + MODCHIP_SECTOR_SIZE - 1) / MODCHIP_SECTOR_SIZE;
+	if (disk_write(DEV_BOOT0, buf, MODCHIP_BL_START_SECTOR, sec_cnt) != RES_OK)
+	{
 		modchip_write_rst_cmd();
 		return false;
 	}
 	return true;
 }
 
-bool modchip_write_ipl_update_from_file(FIL *f){
+bool modchip_write_ipl_update_from_file(FIL *f)
+{
 	u32 size = f_size(f);
-	u8 *buf = (u8*)SDMMC_UPPER_BUFFER;
-	u32 br;
+	u32 sectors = (size + MODCHIP_SECTOR_SIZE - 1) / MODCHIP_SECTOR_SIZE;
+	u32 aligned_size = sectors * MODCHIP_SECTOR_SIZE;
 
-	if(size > SDMMC_UP_BUF_SZ){
+	if (aligned_size > MODCHIP_BL_MAX_SIZE)
+	{
 		return false;
 	}
 
-	memset(buf + (size & ~(0x200 - 1)), 0, 0x200);
+	u8 *buf = (u8*)SDMMC_UPPER_BUFFER;
+	u32 br;
 
+	memset(buf + (size & ~(MODCHIP_SECTOR_SIZE - 1)), 0xFF, MODCHIP_SECTOR_SIZE);
 	FRESULT res = f_read(f, buf, size, &br);
 
-	if(res != FR_OK || br != size){
+	if (res != FR_OK || br != size)
+	{
 		return false;
 	}
 
 	return modchip_write_ipl_update(buf, size);
 }
 
-bool modchip_write_rst_cmd(){
+bool modchip_write_rst_cmd()
+{
 	modchip_cmd_t cmd = {0};
 	cmd.cmd = MODCHIP_CMD_RST;
-	u8 *buf = (u8*)SDMMC_UPPER_BUFFER;
-	if(!disk_read(DEV_BOOT0, buf, 1, 1)){
-		return false;
-	}
-	memset(buf, 0, 256);
-	return disk_write(DEV_BOOT0, buf, 1, 1) && modchip_write_cmd(&cmd);
+	return modchip_write_cmd(&cmd);
 }
 
-bool modchip_write_fw_update_cmd(u32 sector_start, u32 sector_cnt){
+bool modchip_write_fw_update_cmd(u32 sector_start, u32 sector_cnt)
+{
 	modchip_cmd_t cmd = {0};
 	cmd.cmd = MODCHIP_CMD_FW_UPDATE;
 	cmd.fw_update_info.fw_sector_cnt   = sector_cnt;
@@ -199,21 +188,25 @@ bool modchip_write_fw_update_cmd(u32 sector_start, u32 sector_cnt){
 	return modchip_write_cmd(&cmd);
 }
 
-bool modchip_write_rollback_cmd(){
+bool modchip_write_rollback_cmd()
+{
 	return modchip_write_fw_update_cmd(0xffffffff, 0xffffffff);
 }
 
-bool modchip_read_desc(modchip_desc_t *desc){
+bool modchip_read_desc(modchip_desc_t *desc)
+{
 	u8 *buf = (u8 *)SDMMC_UPPER_BUFFER;
 
-	if(disk_read(DEV_BOOT0, buf, MODCHIP_DESC_SECTOR, 1) != RES_OK){
+	if (disk_read(DEV_BOOT0, buf, MODCHIP_DESC_SECTOR, 1) != RES_OK)
+	{
 		return false;
 	}
 
-	memcpy(desc, buf + MODCHIP_DESC_OFFSET, sizeof(*desc));
+	memcpy(desc, buf + MODCHIP_DESC_OFFSET, sizeof(modchip_desc_t));
 	return true;
 }
 
-bool modchip_is_desc_valid(modchip_desc_t *desc){
+bool modchip_is_desc_valid(modchip_desc_t *desc)
+{
 	return desc->signature == MODCHIP_DESC_SIGNATURE;
 }

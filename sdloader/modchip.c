@@ -37,23 +37,6 @@ void modchip_confirm_execution(){
 	sdmmc_end(&emmc_sdmmc);
 }
 
-void modchip_send(u8 *buf){
-	// emmc_sdmmc must be initialized at this point with SDMMC_BUS_WIDTH_1 and SDHCI_TIMING_MMC_ID
-	// not supported by picofly fw
-	sdmmc_cmd_t cmdbuf;
-	sdmmc_req_t req;
-	sdmmc_init_cmd(&cmdbuf, MMC_GO_IDLE_STATE, MODCHIP_MAGIC, SDMMC_RSP_TYPE_1, 0);
-
-	req.blksize = 0x200;
-	req.num_sectors = 1;
-	req.is_write = 1;
-	req.is_multi_block = 0;
-	req.is_auto_stop_trn = 0;
-	req.buf = buf;
-
-	sdmmc_execute_cmd(&emmc_sdmmc, &cmdbuf, &req, NULL);
-}
-
 bool modchip_get_cfg(sd_loader_cfg_t *cfg){
 	u8 *buf = (u8*)SDMMC_UPPER_BUFFER;
 	DRESULT res = disk_read(DEV_BOOT0, buf, MODCHIP_CFG_SECTOR, 1);
@@ -89,10 +72,6 @@ bool modchip_is_cfg_valid(sd_loader_cfg_t *cfg){
 
 bool modchip_clear_cfg(){
 	return modchip_set_cfg(&default_cfg);
-}
-
-void modchip_get_cfg_default(sd_loader_cfg_t *cfg){
-	memcpy(cfg, &default_cfg, sizeof(*cfg));
 }
 
 static bool modchip_write_cmd(modchip_cmd_t *cmd){

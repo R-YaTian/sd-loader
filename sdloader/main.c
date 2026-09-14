@@ -259,6 +259,126 @@ static void start_toolbox(){
 static void toolbox_cb(){
 	start_toolbox();
 }
+#else
+typedef struct{
+	sd_loader_cfg_t *cfg;
+	sd_loader_cfg_t *temp_cfg;
+} save_settings_data_t;
+
+static char default_action_str[22] = "Boot action: ";
+static char ofw_btn_str[22] = "OFW combo: ";
+
+static void save_settings_cb(void *data)
+{
+	save_settings_data_t *save_settings_data = (save_settings_data_t*)data;
+
+	u32 start = get_tmr_ms();
+
+	bool res = modchip_set_cfg(save_settings_data->temp_cfg);
+
+	if (get_tmr_ms() - start < 1000)
+	{
+		msleep(1000 - (get_tmr_ms() - start));
+	}
+
+	if (res)
+	{
+		tui_print_status(COL_TEAL, "Settings saved!");
+		*(save_settings_data->cfg) = *(save_settings_data->temp_cfg);
+	}
+	else
+	{
+		tui_print_status(COL_ORANGE, "Failed to save settings!");
+	}
+}
+
+static void default_action_update(sd_loader_cfg_t *vol_cfg)
+{
+	static const char* default_action_names[] = {
+		[MODCHIP_DEFAULT_ACTION_OFW]     = "OFW    ",
+		[MODCHIP_DEFAULT_ACTION_PAYLOAD] = "Payload",
+		[MODCHIP_DEFAULT_ACTION_MENU]    = "Menu   ",
+	};
+
+	memset(default_action_str + 13, 0, sizeof(default_action_str) - 13);
+	memcpy(default_action_str + 13, default_action_names[vol_cfg->default_action], 7);
+}
+
+static void default_action_cb(void *data)
+{
+	sd_loader_cfg_t *cfg = (sd_loader_cfg_t*)data;
+
+	switch(cfg->default_action)
+	{
+	case MODCHIP_DEFAULT_ACTION_PAYLOAD:
+		cfg->default_action = MODCHIP_DEFAULT_ACTION_OFW;
+		break;
+	case MODCHIP_DEFAULT_ACTION_OFW:
+		cfg->default_action = MODCHIP_DEFAULT_ACTION_MENU;
+		break;
+	case MODCHIP_DEFAULT_ACTION_MENU:
+		cfg->default_action = MODCHIP_DEFAULT_ACTION_PAYLOAD;
+		break;
+	}
+
+	default_action_update(cfg);
+}
+
+static void ofw_btn_update(sd_loader_cfg_t *vol_cfg)
+{
+	const char *ofw_btn_status = vol_cfg->disable_ofw_btn_combo ? "Disabled" : "Enabled ";
+	memset(ofw_btn_str + 11, 0, sizeof(ofw_btn_str) - 11);
+	memcpy(ofw_btn_str + 11, ofw_btn_status, 9);
+}
+
+static void ofw_btn_cb(void *data)
+{
+	sd_loader_cfg_t *cfg = (sd_loader_cfg_t*)data;
+
+	cfg->disable_ofw_btn_combo = !cfg->disable_ofw_btn_combo;
+
+	ofw_btn_update(cfg);
+}
+
+static void ipl_settings_cb(void *data)
+{
+	sd_loader_cfg_t *cfg = (sd_loader_cfg_t*)data;
+	sd_loader_cfg_t temp_cfg = *cfg;
+
+	save_settings_data_t save_settings_data = {
+		.temp_cfg = &temp_cfg,
+		.cfg = cfg,
+	};
+
+	tui_entry_t menu_entries[] = {
+		[0] = TUI_ENTRY_ACTION_NO_BLANK(default_action_str, default_action_cb, &temp_cfg, false, &menu_entries[1]),
+		[1] = TUI_ENTRY_ACTION_NO_BLANK(ofw_btn_str, ofw_btn_cb, &temp_cfg, false, &menu_entries[2]),
+		[2] = TUI_ENTRY_TEXT("", &menu_entries[3]),
+		[3] = TUI_ENTRY_ACTION_NO_BLANK("Save", save_settings_cb, &save_settings_data, false, &menu_entries[4]),
+		[4] = TUI_ENTRY_TEXT("\n", &menu_entries[5]),
+		[5] = TUI_ENTRY_BACK(NULL),
+	};
+
+	tui_entry_menu_t settings_menu = {
+		.entries    = menu_entries,
+		.title      = {
+			.text = "IPL Settings"
+		},
+		.pos_x      = (gfx_ctxt.height - 25 * 8) / 2,
+		.pos_y      = 88,
+		.pad        = 25,
+		.height     = ARRAY_SIZE(menu_entries) + 2,
+		.width      = 25,
+		.colors     = &TUI_COLOR_SCHEME_DEFAULT,
+		.timeout_ms = 0,
+		.show_title = true,
+	};
+
+	default_action_update(cfg);
+	ofw_btn_update(cfg);
+
+	tui_menu_start_rot(&settings_menu);
+}
 #endif
 
 static void do_menu(){
@@ -278,10 +398,10 @@ static void do_menu(){
 	tui_entry_t menu_entries[] = {
 		[0] = TUI_ENTRY_ACTION_NO_BLANK("Power  Off", power_off_cb, NULL, false, &menu_entries[1]),
 		[1] = TUI_ENTRY_ACTION_NO_BLANK("Reboot OFW", ofw_cb,       NULL, false, &menu_entries[2]),
-#if !defined(ENABLE_TOOLBOX)
-		[2] = TUI_ENTRY_ACTION_NO_BLANK("Launch payload", retry_cb, NULL, false, NULL),
-#else
 		[2] = TUI_ENTRY_ACTION_NO_BLANK("Launch payload", retry_cb, NULL, false, &menu_entries[3]),
+#if !defined(ENABLE_TOOLBOX)
+		[3] = TUI_ENTRY_ACTION_NO_BLANK("IPL Settings", ipl_settings_cb, &sdloader_cfg, false, &menu_entries[3]),
+#else
 		[3] = TUI_ENTRY_ACTION_NO_BLANK("Toolbox",     toolbox_cb,  NULL, false, NULL),
 #endif
 	};

@@ -38,8 +38,7 @@ typedef struct{
 typedef enum{
 	SD_LOADER_OK = 0,
 	SD_LOADER_INV_PAYLOAD_SZ,    // found payload, but too large
-	SD_LOADER_NO_PAYLOAD_ON_DEV, // no payload found on active drive
-	SD_LOADER_NO_PAYLOAD,        // no payload found on any drive
+	SD_LOADER_NO_SD,             // no SD card found
 	SD_LOADER_ERR_PAYLOAD,       // found payload, but read error
 	SD_LOADER_FORCE_MENU,        // forced menu by button combo
 	SD_LOADER_ERROR              // other error
@@ -51,7 +50,6 @@ extern void excp_reset(void);
 static bool display_init_done = false;
 static sd_loader_cfg_t sdloader_cfg;
 static payload_ctx_t payload_ctx = {0};
-
 
 static void deinit()
 {
@@ -66,21 +64,23 @@ static SD_LOADER_STATUS read_payload(FIL *f){
 	FRESULT res;
 	SD_LOADER_STATUS sd_res = SD_LOADER_OK;
 
- 	if(sz > PAYLOAD_SIZE_MAX){
- 		return SD_LOADER_INV_PAYLOAD_SZ;
- 	}
+	if (sz > PAYLOAD_SIZE_MAX)
+	{
+		return SD_LOADER_INV_PAYLOAD_SZ;
+	}
 
- 	void *buf = (void*)PAYLOAD_BUF_ADDR;
+	void *buf = (void*)PAYLOAD_BUF_ADDR;
 
- 	u32 br;
- 	res = f_read(f, (void*)buf, sz, &br);
+	u32 br;
+	res = f_read(f, (void*)buf, sz, &br);
 
- 	if(res != FR_OK || br != sz){
- 		return SD_LOADER_ERR_PAYLOAD;
- 	}
+	if (res != FR_OK || br != sz)
+	{
+		return SD_LOADER_ERR_PAYLOAD;
+	}
 
- 	payload_ctx.addr = (void *)PAYLOAD_BUF_ADDR;
- 	payload_ctx.size = sz;
+	payload_ctx.addr = (void *)PAYLOAD_BUF_ADDR;
+	payload_ctx.size = sz;
 
 	return sd_res;
 }
@@ -105,27 +105,32 @@ static void init_display(){
 	}
 }
 
-static void handle_sdloader_status(SD_LOADER_STATUS res){
+static void handle_sdloader_status(SD_LOADER_STATUS res)
+{
 	const char msg[] = "Payload too large!";
 	const char msg_menu[] = "User forced menu!";
-	const char msg_err[] = "An error occurred!";
+	const char msg_err[] = "Error reading payload from SD!";
 
 	u8 col = COL_ORANGE;
 
 	const char *msg_to_display = NULL;
-	switch(res){
+	switch(res)
+	{
 	case SD_LOADER_INV_PAYLOAD_SZ:
 		msg_to_display = msg;
+		break;
+	case SD_LOADER_NO_SD:
+		msg_to_display = "No SD card!";
+		break;
+	case SD_LOADER_ERR_PAYLOAD:
+		msg_to_display = msg_err;
 		break;
 	case SD_LOADER_FORCE_MENU:
 		msg_to_display = msg_menu;
 		col = COL_TEAL;
 		break;
-	case SD_LOADER_OK:
-		return;
 	default:
-		msg_to_display = msg_err;
-		break;
+		return;
 	}
 
 	init_display();
@@ -147,16 +152,22 @@ __attribute__((noreturn)) static void launch_payload(){
 	}
 }
 
-static void handle_file_error(FRESULT res){
+static void handle_file_error(FRESULT res)
+{
 	const char msg[] = "No payload found!";
-	const char msg_err[] = "Error reading payload from SD!";
+	const char msg_err[] = "Error opening payload from SD!";
 	const char *msg_to_display = NULL;
 
-	if(res == FR_NO_FILE){
+	if (res == FR_NO_FILE)
+	{
 		msg_to_display = msg;
-	}else if(res != FR_OK){
+	}
+	else if (res != FR_OK)
+	{
 		msg_to_display = msg_err;
-	}else{
+	}
+	else
+	{
 		return;
 	}
 	init_display();
@@ -211,13 +222,21 @@ static void ofw_cb(void *data){
 	power_set_state(REBOOT_BYPASS_FUSES);
 }
 
-static void try_launch_payload(){
+static void try_launch_payload()
+{
+	if (!sdmmc_get_sd_inserted())
+	{
+		handle_sdloader_status(SD_LOADER_NO_SD);
+		return;
+	}
+
 	SD_LOADER_STATUS res = SD_LOADER_ERROR;
 
-	//TODO: probably should disable backlight if payload is big enough to overwrite frame buffer
+	// TODO: probably should disable backlight if payload is big enough to overwrite frame buffer
 	res = load_payload();
 
-	if(res == SD_LOADER_OK){
+	if (res == SD_LOADER_OK)
+	{
 		launch_payload();
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 CTCaer
+ * Copyright (c) 2019-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -17,13 +17,12 @@
 #ifndef _MEMORY_MAP_H_
 #define _MEMORY_MAP_H_
 
-#define IRAM_START  0x40000000
-
+/* --- BIT/BCT: 0x40000000 - 0x40003000 --- */
 #ifndef IPL_LOAD_ADDR
-#define IPL_LOAD_ADDR             0x40003000 //64K max
+#define IPL_LOAD_ADDR             0x40003000
 #endif
 
-#define IPL_SIZE_MAX              0x10000
+#define IPL_SIZE_MAX              0x10000 // 64K max
 
 #define IPL_SMALL_FB_SZ           (SZ_32K + SZ_16K + SZ_8K + SZ_4K)
 
@@ -37,7 +36,7 @@
 
 // load payload to buffer after ipl, will be relocated to 0x40010000 before jumping to it
 #define PAYLOAD_BUF_ADDR          (IPL_LOAD_ADDR + IPL_SIZE_MAX)
-#define PAYLOAD_SIZE_MAX          (IPL_HEAP_START - PAYLOAD_BUF_ADDR)
+#define PAYLOAD_SIZE_MAX          (0x20000 - 0x200) // 127.5K max
 
 #define PAYLOAD_SIZE_SAFE         (IPL_SMALL_FB_ADDR - PAYLOAD_BUF_ADDR)
 
@@ -46,9 +45,8 @@
 #define SDMMC_UPPER_BUFFER        PAYLOAD_BUF_ADDR
 #define SDMMC_UP_BUF_SZ           PAYLOAD_SIZE_SAFE
 
-
-#if (PAYLOAD_SIZE_MAX) < 0x20000
-#error Payload buffer too small
+#if (PAYLOAD_SIZE_MAX) > (IPL_HEAP_START - PAYLOAD_BUF_ADDR)
+#error Payload buffer too large
 #endif
 
 #if (PAYLOAD_SIZE_SAFE) < 0x10000
@@ -57,11 +55,11 @@
 
 #define DRAM_START                0x80000000
 
-// Framebuffer addresses.
+// Framebuffer addresses. !Do not change!
 #define IPL_FB_ADDRESS   0xF5A00000
-#define IPL_FB_SZ         0x384000 // 720 x 1280 x 4.
+#define  IPL_FB_SZ         0x384000 // 720 x 1280 x 4.
 #define LOG_FB_ADDRESS   0xF5E00000
-#define LOG_FB_SZ         0x334000 // 1280 x 656 x 4.
+#define  LOG_FB_SZ         0x334000 // 1280 x 656 x 4.
 #define NYX_FB_ADDRESS   0xF6200000
 
 #endif

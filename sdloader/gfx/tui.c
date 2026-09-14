@@ -1,4 +1,4 @@
-#include "./tui.h"
+#include "tui.h"
 
 #include <display/di.h>
 #include <gfx.h>
@@ -9,7 +9,7 @@
 #include <power/max17050.h>
 #include <power/bq24193.h>
 
-#define DIM_TIMEOUT 20000
+#define DIM_TIMEOUT 20000 // ms
 
 static bool tui_entry_is_selectable(tui_entry_t *entry){
 	if(entry->disabled){
@@ -92,132 +92,6 @@ void tui_print_battery_icon(bool force){
 	gfx_clear_rect_rot(COL_BLACK, 3, 3, 10, 4);
 	gfx_clear_rect_rot(col, 3, 3, width, 4);
 	gfx_clear_rect_rot(COL_GREY, 14, 3, 1, 4);
-}
-
-tui_status_t tui_menu_start(tui_entry_menu_t *menu){
-	u32 ox, oy;
-	gfx_con_get_origin(&ox, &oy);
-	gfx_con_set_origin(menu->pos_x, menu->pos_y);
-
-	tui_entry_t *selected = NULL;
-	for(tui_entry_t *current = menu->entries; current != NULL; current = current->next){
-		if(tui_entry_is_selectable(current)){
-			selected = current;
-			break;
-		}
-	}
-
-	if(!selected){
-		return(TUI_ERR_NO_SELECTABLE_ENTRY);
-	}
-
-	gfx_clear_color(TUI_COLOR_SCHEME_DEFAULT.bg);
-
-	while(true){
-
-		gfx_con_setpos(menu->pos_x, menu->pos_y);
-		gfx_con_setcol(TUI_COLOR_SCHEME_DEFAULT.fg, true, TUI_COLOR_SCHEME_DEFAULT.bg);
-		gfx_printf("%s\n\n", menu->title.text);
-		for(tui_entry_t *current = menu->entries; current != NULL; current = current->next){
-			const char *title;
-			switch(current->type){
-				case TUI_ENTRY_TYPE_MENU:
-				case TUI_ENTRY_TYPE_ACTION:
-				case TUI_ENTRY_TYPE_ACTION_MODIFYING:
-				case TUI_ENTRY_TYPE_TEXT:
-				case TUI_ENTRY_TYPE_ACTION_NO_BLANK:
-				case TUI_ENTRY_TYPE_ACTION_MODIFYING_NO_BLANK:
-					title = current->title.text;
-					break;
-				case TUI_ENTRY_TYPE_BACK:
-					title = "Back";
-					break;
-			}
-
-			switch(current->type){
-			case TUI_ENTRY_TYPE_ACTION:
-			case TUI_ENTRY_TYPE_ACTION_MODIFYING:
-			case TUI_ENTRY_TYPE_ACTION_NO_BLANK:
-			case TUI_ENTRY_TYPE_ACTION_MODIFYING_NO_BLANK:
-				u32 x, y;
-				gfx_con_getpos_rot(&x, &y);
-				current->action.y_pos = y;
-				current->action.x_pos = x;
-				break;
-			default:
-				break;
-			}
-
-			if(current == selected){
-				if(current->disabled){
-					gfx_con_setcol(TUI_COLOR_SCHEME_DEFAULT.fg_active_disabled, true, TUI_COLOR_SCHEME_DEFAULT.bg_active_disabled);
-				}else{
-					gfx_con_setcol(TUI_COLOR_SCHEME_DEFAULT.fg_active, true, TUI_COLOR_SCHEME_DEFAULT.bg_active);
-				}
-			}else{
-				if(current->disabled){
-					gfx_con_setcol(TUI_COLOR_SCHEME_DEFAULT.fg_disabled, true, TUI_COLOR_SCHEME_DEFAULT.bg_disabled);
-				}else{
-					gfx_con_setcol(TUI_COLOR_SCHEME_DEFAULT.fg_active_disabled, true, TUI_COLOR_SCHEME_DEFAULT.bg_active_disabled);
-				}
-			}
-
-			gfx_printf("%s\n", title);
-		}
-
-		u8 btn = btn_wait_timeout_single(1000);
-
-		if(btn & BTN_VOL_UP){
-			tui_entry_t *next_selected = selected;
-			for(tui_entry_t *current = menu->entries; current != selected; current = current->next){
-				if(tui_entry_is_selectable(current)){
-					next_selected = current;
-				}
-			}
-			selected = next_selected;
-		}else if(btn & BTN_VOL_DOWN){
-			for(tui_entry_t *next_selected = selected->next; next_selected != NULL; next_selected = next_selected->next){
-				if(tui_entry_is_selectable(next_selected)){
-					selected = next_selected;
-					break;
-				}
-			}
-		}else if(btn & BTN_POWER){
-			switch(selected->type){
-				case TUI_ENTRY_TYPE_MENU:
-					tui_menu_start_rot(&selected->menu);
-					break;
-				case TUI_ENTRY_TYPE_ACTION_NO_BLANK:
-					if(!selected->disabled){
-						selected->action.cb(selected->action.data);
-					}
-					break;
-				case TUI_ENTRY_TYPE_ACTION:
-					if(!selected->disabled){
-						selected->action.cb(selected->action.data);
-						gfx_clear_color(TUI_COLOR_SCHEME_DEFAULT.bg);
-					}
-					break;
-				case TUI_ENTRY_TYPE_ACTION_MODIFYING_NO_BLANK:
-					if(!selected->disabled){
-						selected->action_modifying.cb(selected->action.data, (tui_entry_t*)&selected, menu);
-					}
-					break;
-				case TUI_ENTRY_TYPE_ACTION_MODIFYING:
-					if(!selected->disabled){
-						selected->action_modifying.cb(selected->action.data, (tui_entry_t*)&selected, menu);
-						gfx_clear_color(TUI_COLOR_SCHEME_DEFAULT.bg);
-					}
-					break;
-				case TUI_ENTRY_TYPE_BACK:
-					gfx_con_set_origin(ox, oy);
-					return(TUI_SUCCESS);
-				case TUI_ENTRY_TYPE_TEXT:
-				default:
-					break;
-			}
-		}
-	}
 }
 
 void tui_menu_clear_screen(tui_entry_menu_t *menu){

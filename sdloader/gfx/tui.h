@@ -247,7 +247,6 @@ struct tui_entry_t{
 	};
 };
 
-tui_status_t tui_menu_start(tui_entry_menu_t *menu);
 tui_status_t tui_menu_start_rot(tui_entry_menu_t *menu);
 
 void tui_menu_clear_screen(tui_entry_menu_t *menu);

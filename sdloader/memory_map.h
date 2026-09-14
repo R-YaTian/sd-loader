@@ -17,40 +17,6 @@
 #ifndef _MEMORY_MAP_H_
 #define _MEMORY_MAP_H_
 
-#if 0
-
-#define IRAM_START  0x40000000
-
-#define IPL_LOAD_ADDR             0x40000000 //60K
-
-#define USB_EP_BULK_IN_BUF_ADDR   (IPL_LOAD_ADDR + MAX_PAYLOAD_SIZE) //64K
-#define USB_EP_BULK_IN_MAX_XFER   SZ_64K  
-#define USB_EP_BULK_OUT_BUF_ADDR  (USB_EP_BULK_IN_BUF_ADDR + SZ_64K) //64K
-#define USB_EP_BULK_OUT_MAX_XFER  SZ_64K
-
-#define IPL_SMALL_FB_SZ           (SZ_32K + SZ_16K + SZ_8K + SZ_4K)
-#define IPL_SMALL_FB_ADDR         (USB_EP_BULK_OUT_BUF_ADDR + SZ_64K) //60K
-
-#define XUSB_RING_ADDR            (IPL_SMALL_FB_ADDR + IPL_SMALL_FB_SZ) //1.5K
-
-#define USB_EP_CONTROL_BUF_ADDR   (XUSB_RING_ADDR + SZ_1K + (SZ_1K / 2)) //1K
-
-#define IPL_HEAP_START            (USB_EP_CONTROL_BUF_ADDR + SZ_1K)
-
-#define IPL_STACK_TOP             0x40040000
-
-#define SDMMC_UPPER_BUFFER        USB_EP_BULK_OUT_BUF_ADDR
-#define SDMMC_UP_BUF_SZ           USB_EP_BULK_OUT_MAX_XFER
-
-#define PAYLOAD_BUF_ADDR          0x40010000 // load payload directly to 0x40010000 -> max. payload size reduced by 4Kb, but don't need a relocator
-#define PAYLOAD_MAX_SZ            (3 * SZ_64K - (4 * SZ_1K)) // leaves 4kb for stack
-
-#if (IPL_HEAP_START + SZ_1K) > IPL_STACK_TOP
-// #error payload too large
-#endif 
-
-#else
-
 #define IRAM_START  0x40000000
 
 #ifndef IPL_LOAD_ADDR
@@ -89,12 +55,9 @@
 #error Payload buffer too small
 #endif
 
-#endif
-
-
 #define DRAM_START                0x80000000
 
-// // Framebuffer addresses.
+// Framebuffer addresses.
 #define IPL_FB_ADDRESS   0xF5A00000
 #define IPL_FB_SZ         0x384000 // 720 x 1280 x 4.
 #define LOG_FB_ADDRESS   0xF5E00000

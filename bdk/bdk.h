@@ -22,7 +22,6 @@
 #include <display/di.h>
 #include <mem/heap.h>
 #include <mem/mc.h>
-#include <module.h>
 #include <power/bq24193.h>
 #include <power/max17050.h>
 #include <power/max77620.h>

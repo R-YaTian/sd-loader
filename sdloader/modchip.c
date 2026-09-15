@@ -69,11 +69,6 @@ bool modchip_is_cfg_valid(sd_loader_cfg_t *cfg){
 	return true;
 }
 
-bool modchip_clear_cfg()
-{
-	return modchip_set_cfg(&default_cfg);
-}
-
 static bool modchip_write_cmd(modchip_cmd_t *cmd)
 {
 	u8 *buf = (u8 *)SDMMC_UPPER_BUFFER;

@@ -287,7 +287,7 @@ static void save_settings_cb(void *data)
 
 	save_settings_data_t *save_settings_data = (save_settings_data_t*)data;
 
-	tui_print_status(COL_TEAL, "Saving settings...");
+	tui_print_status(COL_TEAL, "Saving settings");
 
 	u32 start = get_tmr_ms();
 
@@ -300,12 +300,12 @@ static void save_settings_cb(void *data)
 
 	if (res)
 	{
-		tui_print_status(COL_TEAL, "Settings saved!");
+		tui_print_status(COL_TEAL, "Saved!");
 		*(save_settings_data->cfg) = *(save_settings_data->temp_cfg);
 	}
 	else
 	{
-		tui_print_status(COL_ORANGE, "Failed to save settings!");
+		tui_print_status(COL_ORANGE, "Failed to save!");
 	}
 
 	emmc_end();
@@ -420,9 +420,9 @@ static void do_menu()
 	tui_entry_t menu_entries[] = {
 		[0] = TUI_ENTRY_ACTION_NO_BLANK("Power  Off", power_off_cb, NULL, false, &menu_entries[1]),
 		[1] = TUI_ENTRY_ACTION_NO_BLANK("Reboot OFW", ofw_cb,       NULL, false, &menu_entries[2]),
-		[2] = TUI_ENTRY_ACTION_NO_BLANK("Launch payload", retry_cb, NULL, false, &menu_entries[3]),
+		[2] = TUI_ENTRY_ACTION_NO_BLANK("Load payload", retry_cb,   NULL, false, &menu_entries[3]),
 #if !defined(ENABLE_TOOLBOX)
-		[3] = TUI_ENTRY_ACTION_NO_BLANK("IPL Settings", ipl_settings_cb, &sdloader_cfg, false, NULL),
+		[3] = TUI_ENTRY_ACTION_NO_BLANK("IPL Config", ipl_settings_cb, &sdloader_cfg, false, NULL),
 #else
 		[3] = TUI_ENTRY_ACTION_NO_BLANK("Toolbox",     toolbox_cb,  NULL, false, NULL),
 #endif

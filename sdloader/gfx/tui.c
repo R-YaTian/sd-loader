@@ -8,6 +8,7 @@
 #include <utils/btn.h>
 #include <power/max17050.h>
 #include <power/bq24193.h>
+#include <bdkver.h>
 
 #define DIM_TIMEOUT 20000 // ms
 
@@ -95,6 +96,15 @@ void tui_print_battery_icon(bool force)
 	gfx_clear_rect_rot(COL_BLACK, 3, 3, 10, 4);
 	gfx_clear_rect_rot(col, 3, 3, width, 4);
 	gfx_clear_rect_rot(COL_GREY, 14, 3, 1, 4);
+	tui_print_topinfo(COL_WHITE, MINIBDK_VERSION_STR);
+}
+
+void tui_print_topinfo(u8 col_fg, const char *fmt)
+{
+	gfx_con_setpos_rot(0, TUI_TOPINFO_POS_Y);
+	gfx_clear_rect_rot(TUI_COLOR_SCHEME_DEFAULT.bg, 0, TUI_TOPINFO_POS_Y, gfx_ctxt.height, 8);
+	gfx_con_setcol(col_fg, true, TUI_COLOR_SCHEME_DEFAULT.bg);
+	gfx_printf_rot(fmt);
 }
 
 void tui_menu_clear_screen(tui_entry_menu_t *menu)
@@ -258,7 +268,7 @@ tui_status_t tui_menu_start_rot(tui_entry_menu_t *menu)
 				default:
 					break;
 			}
-			//restore brightness on return from action
+			// restore brightness on return from action
 			tui_dim_on_timeout(1);
 		}
 

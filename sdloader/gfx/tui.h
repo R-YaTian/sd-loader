@@ -5,6 +5,7 @@
 #include <gfx.h>
 
 #define TUI_STATUS_POS_Y 72
+#define TUI_TOPINFO_POS_Y 10
 
 #define TUI_ENTRY_TEXT(_text, _next) \
 	{                                \
@@ -252,7 +253,7 @@ tui_status_t tui_menu_start_rot(tui_entry_menu_t *menu);
 void tui_menu_clear_screen(tui_entry_menu_t *menu);
 void tui_print_menu(tui_entry_menu_t *menu);
 void tui_print_battery_icon(bool force);
-
+void tui_print_topinfo(u8 col_fg, const char *fmt);
 void tui_clear_status();
 void tui_print_status(u8 col_fg, const char *fmt);
 void tui_dim_on_timeout(u8 btn);

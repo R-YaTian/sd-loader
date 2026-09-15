@@ -67,7 +67,6 @@ bool modchip_get_cfg(sd_loader_cfg_t *cfg);
 void modchip_get_cfg_or_default(sd_loader_cfg_t *cfg);
 bool modchip_set_cfg(sd_loader_cfg_t *cfg);
 bool modchip_is_cfg_valid(sd_loader_cfg_t *cfg);
-bool modchip_clear_cfg();
 void modchip_confirm_execution();
 
 bool modchip_write_rst_cmd();

@@ -36,7 +36,7 @@
 
 // load payload to buffer after ipl, will be relocated to 0x40010000 before jumping to it
 #define PAYLOAD_BUF_ADDR          (IPL_LOAD_ADDR + IPL_SIZE_MAX)
-#define PAYLOAD_SIZE_MAX          (0x20000 - 0x200) // 127.5K max
+#define PAYLOAD_SIZE_MAX          (IPL_HEAP_START - PAYLOAD_BUF_ADDR)
 
 #define PAYLOAD_SIZE_SAFE         (IPL_SMALL_FB_ADDR - PAYLOAD_BUF_ADDR)
 

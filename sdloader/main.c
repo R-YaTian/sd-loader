@@ -33,7 +33,7 @@
 typedef struct{
 	void *addr;
 	u32 size;
-}payload_ctx_t;
+} payload_ctx_t;
 
 typedef enum{
 	SD_LOADER_OK = 0,
@@ -59,7 +59,8 @@ static void deinit()
 	hw_deinit(false);
 }
 
-static SD_LOADER_STATUS read_payload(FIL *f){
+static SD_LOADER_STATUS read_payload(FIL *f)
+{
 	FSIZE_t sz = f_size(f);
 	FRESULT res;
 	SD_LOADER_STATUS sd_res = SD_LOADER_OK;
@@ -85,13 +86,16 @@ static SD_LOADER_STATUS read_payload(FIL *f){
 	return sd_res;
 }
 
-static void display_logo(){
+static void display_logo()
+{
 	u32 x_pos = (gfx_ctxt.height - logo_width) / 2;
 	gfx_render_bmp_2bit_rot(logo_arr, logo_width, logo_height, x_pos, 25);
 }
 
-static void init_display(){
-	if(!display_init_done){
+static void init_display()
+{
+	if (!display_init_done)
+	{
 		display_init();
 		u8 *fb = (u8*)display_init_window_a_pitch_small_palette(logo_lut, sizeof(logo_lut) / 4);
 		gfx_init_ctxt(fb, 180, 320, 192);
@@ -105,11 +109,13 @@ static void init_display(){
 	}
 }
 
+static char msg_err[] = "Error xxxxing payload from SD!";
+
 static void handle_sdloader_status(SD_LOADER_STATUS res)
 {
 	const char msg[] = "Payload too large!";
-	const char msg_menu[] = "User forced menu!";
-	const char msg_err[] = "Error reading payload from SD!";
+	const char msg_no_sd[] = "No SD card!";
+	memcpy(msg_err + 6, "read", 4);
 
 	u8 col = COL_ORANGE;
 
@@ -120,14 +126,12 @@ static void handle_sdloader_status(SD_LOADER_STATUS res)
 		msg_to_display = msg;
 		break;
 	case SD_LOADER_NO_SD:
-		msg_to_display = "No SD card!";
+		msg_to_display = msg_no_sd;
 		break;
 	case SD_LOADER_ERR_PAYLOAD:
 		msg_to_display = msg_err;
 		break;
 	case SD_LOADER_FORCE_MENU:
-		msg_to_display = msg_menu;
-		col = COL_TEAL;
 		break;
 	default:
 		return;
@@ -137,8 +141,10 @@ static void handle_sdloader_status(SD_LOADER_STATUS res)
 	tui_print_status(col, msg_to_display);
 }
 
-__attribute__((noreturn)) static void launch_payload(){
-	if (!is_t210()) {
+__attribute__((noreturn)) static void launch_payload()
+{
+	if (!is_t210())
+	{
 		*(u32*)0x7000EF08 = 0x34313254;   // "T214"
 		*(u32*)0x7000EF0C = 0x3043444D;   // "MDC0"
 		*(u32*)0x7000EF10 = 0x00000000;   // Null terminate
@@ -147,7 +153,8 @@ __attribute__((noreturn)) static void launch_payload(){
 	deinit();
 	/* payloads (may) expect to be loaded at 0x40010000, relocate before jumping to payload */
 	reloc_and_start_payload(payload_ctx.addr, payload_ctx.size);
-	while(1){
+	while(1)
+	{
 		bpmp_halt();
 	}
 }
@@ -155,8 +162,8 @@ __attribute__((noreturn)) static void launch_payload(){
 static void handle_file_error(FRESULT res)
 {
 	const char msg[] = "No payload found!";
-	const char msg_err[] = "Error opening payload from SD!";
 	const char *msg_to_display = NULL;
+	memcpy(msg_err + 6, "open", 4);
 
 	if (res == FR_NO_FILE)
 	{
@@ -212,12 +219,14 @@ static SD_LOADER_STATUS load_payload()
 	return sd_res;
 }
 
-static void power_off_cb(void *data){
+static void power_off_cb(void *data)
+{
 	deinit();
 	power_set_state(POWER_OFF);
 }
 
-static void ofw_cb(void *data){
+static void ofw_cb(void *data)
+{
 	deinit();
 	power_set_state(REBOOT_BYPASS_FUSES);
 }
@@ -241,26 +250,30 @@ static void try_launch_payload()
 	}
 }
 
-static void retry_cb(void *data){
+static void retry_cb(void *data)
+{
 	try_launch_payload();
 }
 
 #if defined(ENABLE_TOOLBOX)
-static void clear_screen_except_logo_and_status(){
+static void clear_screen_except_logo_and_status()
+{
 	gfx_clear_rect_rot(COL_BLACK, 0, 88, gfx_ctxt.height, gfx_ctxt.width - 80);
 }
 
-static void start_toolbox(){
+static void start_toolbox()
+{
 	gfx_con_setpos_rot(0, 0);
 	clear_screen_except_logo_and_status();
 	toolbox(0, 88, &sdloader_cfg);
 }
 
-static void toolbox_cb(){
+static void toolbox_cb()
+{
 	start_toolbox();
 }
 #else
-typedef struct{
+typedef struct {
 	sd_loader_cfg_t *cfg;
 	sd_loader_cfg_t *temp_cfg;
 } save_settings_data_t;
@@ -270,7 +283,11 @@ static char ofw_btn_str[22] = "OFW combo: ";
 
 static void save_settings_cb(void *data)
 {
+	emmc_initialize(false);
+
 	save_settings_data_t *save_settings_data = (save_settings_data_t*)data;
+
+	tui_print_status(COL_TEAL, "Saving settings...");
 
 	u32 start = get_tmr_ms();
 
@@ -290,6 +307,8 @@ static void save_settings_cb(void *data)
 	{
 		tui_print_status(COL_ORANGE, "Failed to save settings!");
 	}
+
+	emmc_end();
 }
 
 static void default_action_update(sd_loader_cfg_t *vol_cfg)
@@ -355,33 +374,36 @@ static void ipl_settings_cb(void *data)
 		[1] = TUI_ENTRY_ACTION_NO_BLANK(ofw_btn_str, ofw_btn_cb, &temp_cfg, false, &menu_entries[2]),
 		[2] = TUI_ENTRY_TEXT("", &menu_entries[3]),
 		[3] = TUI_ENTRY_ACTION_NO_BLANK("Save", save_settings_cb, &save_settings_data, false, &menu_entries[4]),
-		[4] = TUI_ENTRY_TEXT("\n", &menu_entries[5]),
+		[4] = TUI_ENTRY_TEXT("", &menu_entries[5]),
 		[5] = TUI_ENTRY_BACK(NULL),
 	};
 
 	tui_entry_menu_t settings_menu = {
 		.entries    = menu_entries,
 		.title      = {
-			.text = "IPL Settings"
+			.text = NULL,
 		},
-		.pos_x      = (gfx_ctxt.height - 25 * 8) / 2,
+		.pos_x      = (gfx_ctxt.height - 22 * 8) / 2,
 		.pos_y      = 88,
-		.pad        = 25,
-		.height     = ARRAY_SIZE(menu_entries) + 2,
-		.width      = 25,
+		.pad        = 22,
+		.height     = ARRAY_SIZE(menu_entries) + 1,
+		.width      = 22,
 		.colors     = &TUI_COLOR_SCHEME_DEFAULT,
 		.timeout_ms = 0,
-		.show_title = true,
+		.show_title = false,
 	};
 
 	default_action_update(cfg);
 	ofw_btn_update(cfg);
 
+	tui_clear_status();
 	tui_menu_start_rot(&settings_menu);
+	tui_clear_status();
 }
 #endif
 
-static void do_menu(){
+static void do_menu()
+{
 	tui_entry_menu_t menu = {
 		.colors = &TUI_COLOR_SCHEME_DEFAULT,
 		.height = 5,
@@ -392,7 +414,7 @@ static void do_menu(){
 		.title = {
 			.text = NULL,
 		},
-		.timeout_ms = 60 * 1000, // return and power off if no action for 1min
+		.timeout_ms = 60 * 1000, // return and power off if no action for 1 minute
 	};
 
 	tui_entry_t menu_entries[] = {
@@ -400,7 +422,7 @@ static void do_menu(){
 		[1] = TUI_ENTRY_ACTION_NO_BLANK("Reboot OFW", ofw_cb,       NULL, false, &menu_entries[2]),
 		[2] = TUI_ENTRY_ACTION_NO_BLANK("Launch payload", retry_cb, NULL, false, &menu_entries[3]),
 #if !defined(ENABLE_TOOLBOX)
-		[3] = TUI_ENTRY_ACTION_NO_BLANK("IPL Settings", ipl_settings_cb, &sdloader_cfg, false, &menu_entries[3]),
+		[3] = TUI_ENTRY_ACTION_NO_BLANK("IPL Settings", ipl_settings_cb, &sdloader_cfg, false, NULL),
 #else
 		[3] = TUI_ENTRY_ACTION_NO_BLANK("Toolbox",     toolbox_cb,  NULL, false, NULL),
 #endif
@@ -411,16 +433,19 @@ static void do_menu(){
 	tui_menu_start_rot(&menu);
 }
 
-static void low_battery_shutdown(){
+static void low_battery_shutdown()
+{
 	u8 intr = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_IRQTOP);
 
-	if(intr & MAX77620_IRQ_TOP_GLBL){
+	if(intr & MAX77620_IRQ_TOP_GLBL)
+	{
 		/* battery too low */
 		power_set_state(POWER_OFF);
 	}
 }
 
-static void get_cfg(){
+static void get_cfg()
+{
 	emmc_initialize(false);
 	modchip_get_cfg_or_default(&sdloader_cfg);
 	emmc_end();

@@ -445,4 +445,6 @@ void toolbox(u32 x, u32 y, sd_loader_cfg_t *cfg){
 	};
 
 	tui_menu_start_rot(&menu);
+
+	emmc_end();
 }

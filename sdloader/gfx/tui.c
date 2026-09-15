@@ -11,7 +11,8 @@
 
 #define DIM_TIMEOUT 20000 // ms
 
-static bool tui_entry_is_selectable(tui_entry_t *entry){
+static bool tui_entry_is_selectable(tui_entry_t *entry)
+{
 	if(entry->disabled){
 		return false;
 	}
@@ -28,7 +29,8 @@ static bool tui_entry_is_selectable(tui_entry_t *entry){
 	}
 }
 
-void tui_dim_on_timeout(u8 btn){
+void tui_dim_on_timeout(u8 btn)
+{
 	static u32 time = 0;
 	static bool initialized = false;
 	u32 now = get_tmr_ms();
@@ -51,7 +53,8 @@ void tui_dim_on_timeout(u8 btn){
 	}
 }
 
-void tui_print_battery_icon(bool force){
+void tui_print_battery_icon(bool force)
+{
 	static u32 last_update = 0;
 	static u8 cnt = 0;
 
@@ -94,11 +97,13 @@ void tui_print_battery_icon(bool force){
 	gfx_clear_rect_rot(COL_GREY, 14, 3, 1, 4);
 }
 
-void tui_menu_clear_screen(tui_entry_menu_t *menu){
+void tui_menu_clear_screen(tui_entry_menu_t *menu)
+{
 	gfx_clear_rect_rot(menu->colors->bg, menu->pos_x, menu->pos_y, menu->width * 8, menu->height * 8);
 }
 
-void tui_print_menu(tui_entry_menu_t *menu){
+void tui_print_menu(tui_entry_menu_t *menu)
+{
 	const tui_color_scheme_t *colors = menu->colors;
 	u32 ox, oy;
 	u32 _x, y;
@@ -167,7 +172,8 @@ void tui_print_menu(tui_entry_menu_t *menu){
 	gfx_con_set_origin_rot(ox, oy);
 }
 
-tui_status_t tui_menu_start_rot(tui_entry_menu_t *menu){
+tui_status_t tui_menu_start_rot(tui_entry_menu_t *menu)
+{
 	tui_print_battery_icon(true);
 
 	u32 time = get_tmr_ms();
@@ -262,11 +268,13 @@ tui_status_t tui_menu_start_rot(tui_entry_menu_t *menu){
 	}
 }
 
-void tui_clear_status(){
+void tui_clear_status()
+{
 	gfx_clear_rect_rot(TUI_COLOR_SCHEME_DEFAULT.bg, 0, TUI_STATUS_POS_Y, gfx_ctxt.height, 8);
 }
 
-void tui_print_status(u8 col_fg, const char *fmt){
+void tui_print_status(u8 col_fg, const char *fmt)
+{
 	gfx_con_setpos_rot(0, TUI_STATUS_POS_Y);
 	tui_clear_status();
 	gfx_con_setcol(col_fg, true, TUI_COLOR_SCHEME_DEFAULT.bg);

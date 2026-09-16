@@ -30,9 +30,13 @@ TOOLS = $(BMP2HDR_DIR) $(BIN2HDR_DIR)
 
 BIN2HDR = $(BIN2HDR_DIR)/output/bin2header.exe
 
-.PHONY: all tools $(TOOLS) bctbin
+.PHONY: all toolbox tools $(TOOLS) bctbin
 
 all: $(OUT_DIR)/$(PAYLOAD_NAME).bin $(OUT_DIR)/$(PAYLOAD_NAME).enc $(OUT_DIR)/$(PAYLOAD_NAME).h $(BCT_HEADERS)
+
+toolbox: $(TOOLS)
+	@$(MAKE) --no-print-directory -C $(SDLOADER_DIR) ENABLE_TOOLBOX=1
+	@cp $(SDLOADER) picofly_toolbox.bin
 
 tools: $(TOOLS)
 
@@ -41,7 +45,7 @@ clean: $(TOOLS) $(LOADER) $(SDLOADER)
 
 $(TOOLS):
 	@echo building $@
-	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS)
+	@$(MAKE) --no-print-directory -C $@ $(if $(filter toolbox,$(MAKECMDGOALS)),all,$(MAKECMDGOALS))
 
 $(OUT_DIR)/$(PAYLOAD_NAME).h: $(OUT_DIR)/$(PAYLOAD_NAME).enc $(OUT_DIR) $(TOOLS)
 	@echo building $@

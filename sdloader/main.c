@@ -278,8 +278,8 @@ typedef struct {
 	sd_loader_cfg_t *temp_cfg;
 } save_settings_data_t;
 
-static char default_action_str[22] = "Boot action: ";
-static char ofw_btn_str[22] = "OFW combo: ";
+static char def_act_str[22] = "Boot action: ";
+static char ofw_btn_str[22] = "OFW   combo: ";
 
 static void save_settings_cb(void *data)
 {
@@ -319,8 +319,8 @@ static void default_action_update(sd_loader_cfg_t *vol_cfg)
 		[MODCHIP_DEFAULT_ACTION_MENU]    = "Menu   ",
 	};
 
-	memset(default_action_str + 13, 0, sizeof(default_action_str) - 13);
-	memcpy(default_action_str + 13, default_action_names[vol_cfg->default_action], 7);
+	memset(def_act_str + 13, 0, sizeof(def_act_str) - 13);
+	memcpy(def_act_str + 13, default_action_names[vol_cfg->default_action], 7);
 }
 
 static void default_action_cb(void *data)
@@ -346,8 +346,8 @@ static void default_action_cb(void *data)
 static void ofw_btn_update(sd_loader_cfg_t *vol_cfg)
 {
 	const char *ofw_btn_status = vol_cfg->disable_ofw_btn_combo ? "Disabled" : "Enabled ";
-	memset(ofw_btn_str + 11, 0, sizeof(ofw_btn_str) - 11);
-	memcpy(ofw_btn_str + 11, ofw_btn_status, 9);
+	memset(ofw_btn_str + 13, 0, sizeof(ofw_btn_str) - 13);
+	memcpy(ofw_btn_str + 13, ofw_btn_status, 8);
 }
 
 static void ofw_btn_cb(void *data)
@@ -370,7 +370,7 @@ static void ipl_settings_cb(void *data)
 	};
 
 	tui_entry_t menu_entries[] = {
-		[0] = TUI_ENTRY_ACTION_NO_BLANK(default_action_str, default_action_cb, &temp_cfg, false, &menu_entries[1]),
+		[0] = TUI_ENTRY_ACTION_NO_BLANK(def_act_str, default_action_cb, &temp_cfg, false, &menu_entries[1]),
 		[1] = TUI_ENTRY_ACTION_NO_BLANK(ofw_btn_str, ofw_btn_cb, &temp_cfg, false, &menu_entries[2]),
 		[2] = TUI_ENTRY_TEXT("", &menu_entries[3]),
 		[3] = TUI_ENTRY_ACTION_NO_BLANK("Save", save_settings_cb, &save_settings_data, false, &menu_entries[4]),
@@ -383,11 +383,11 @@ static void ipl_settings_cb(void *data)
 		.title      = {
 			.text = NULL,
 		},
-		.pos_x      = (gfx_ctxt.height - 22 * 8) / 2,
+		.pos_x      = (gfx_ctxt.height - 21 * 8) / 2,
 		.pos_y      = 88,
-		.pad        = 22,
-		.height     = ARRAY_SIZE(menu_entries) + 1,
-		.width      = 22,
+		.pad        = 21,
+		.height     = ARRAY_SIZE(menu_entries) + 2,
+		.width      = 21,
 		.colors     = &TUI_COLOR_SCHEME_DEFAULT,
 		.timeout_ms = 0,
 		.show_title = false,
@@ -406,10 +406,10 @@ static void do_menu()
 {
 	tui_entry_menu_t menu = {
 		.colors = &TUI_COLOR_SCHEME_DEFAULT,
-		.height = 5,
-		.pad = 14,
-		.width = 14,
-		.pos_x = (gfx_ctxt.height - 14 * 8) / 2,
+		.height = 6,
+		.pad = 12,
+		.width = 12,
+		.pos_x = (gfx_ctxt.height - 12 * 8) / 2 - 4,
 		.pos_y = 88,
 		.title = {
 			.text = NULL,
@@ -418,13 +418,13 @@ static void do_menu()
 	};
 
 	tui_entry_t menu_entries[] = {
-		[0] = TUI_ENTRY_ACTION_NO_BLANK("Power  Off", power_off_cb, NULL, false, &menu_entries[1]),
-		[1] = TUI_ENTRY_ACTION_NO_BLANK("Reboot OFW", ofw_cb,       NULL, false, &menu_entries[2]),
-		[2] = TUI_ENTRY_ACTION_NO_BLANK("Load payload", retry_cb,   NULL, false, &menu_entries[3]),
+		[0] = TUI_ENTRY_ACTION_NO_BLANK("Power    Off", power_off_cb, NULL, false, &menu_entries[1]),
+		[1] = TUI_ENTRY_ACTION_NO_BLANK("Reboot   OFW", ofw_cb,       NULL, false, &menu_entries[2]),
+		[2] = TUI_ENTRY_ACTION_NO_BLANK("Load payload", retry_cb,     NULL, false, &menu_entries[3]),
 #if !defined(ENABLE_TOOLBOX)
-		[3] = TUI_ENTRY_ACTION_NO_BLANK("IPL Config", ipl_settings_cb, &sdloader_cfg, false, NULL),
+		[3] = TUI_ENTRY_ACTION_NO_BLANK("IPL Settings", ipl_settings_cb, &sdloader_cfg, false, NULL),
 #else
-		[3] = TUI_ENTRY_ACTION_NO_BLANK("Toolbox",     toolbox_cb,  NULL, false, NULL),
+		[3] = TUI_ENTRY_ACTION_NO_BLANK("Open toolbox", toolbox_cb,   NULL, false, NULL),
 #endif
 	};
 

@@ -43,6 +43,11 @@ OBJS = $(addprefix $(BUILD_DIR)/$(TARGET)/, \
 	diskio.o ff.o ffsystem.o ffunicode.o max17050.o \
 	loader.o modchip.o files.o )
 
+ifeq ($(ENABLE_TOOLBOX),1)
+OBJS += $(addprefix $(BUILD_DIR)/$(TARGET)/, modchip_toolbox.o sprintf.o)
+CUSTOMDEFINES += -DENABLE_TOOLBOX
+endif
+
 # startup code must be compiled with lto disabled
 OBJS_NO_LTO_C = $(addprefix $(BUILD_DIR)/$(TARGET)/, \
 	startup.o loader.o)

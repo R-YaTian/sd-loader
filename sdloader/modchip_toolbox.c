@@ -8,54 +8,66 @@
 #include <gfx.h>
 #include <utils/sprintf.h>
 #include <utils/types.h>
+#include <utils/util.h>
 #include "memory_map.h"
 
 static bool command_pending = false;
 
-typedef enum{
+typedef enum {
 	TOOLBOX_INVALID_UPDATE_SIZE,
-}toolbox_status;
+} toolbox_status;
 
-typedef struct{
+typedef struct {
 	tui_entry_menu_t *menu;
 	void *data;
-}confirm_menu_data_t;
+} confirm_menu_data_t;
 
-typedef struct{
+typedef struct {
 	FIL *f;
 	const char *path;
 	u8 drive;
-}fw_update_info;
+} fw_update_info;
 
-typedef struct{
+typedef struct {
 	sd_loader_cfg_t *cfg;
 	sd_loader_cfg_t *temp_cfg;
-}save_settings_data_t;
+} save_settings_data_t;
 
-static void handle_file_error(const char *path, u8 drive, FRESULT res){
+static void handle_file_error(const char *path, u8 drive, FRESULT res)
+{
 	char msg[48];
-	if(res == FR_NO_FILE){
+	if (res == FR_NO_FILE)
+	{
 		s_printf(&msg[0], "No %s found!", path);
-	}else if(res != FR_OK){
-		s_printf(&msg[0], "Error reading %s from %s!", path, drive_friendly_names[drive]);
-	}else{
+	}
+	else if(res != FR_OK)
+	{
+		s_printf(&msg[0], "Error opening %s from %s!", path, drive_friendly_names[drive]);
+	}
+	else
+	{
 		return;
 	}
 	tui_print_status(COL_ORANGE, msg);
 }
 
-static void handle_toolbox_error(toolbox_status res, void *extra_info){
+static void handle_toolbox_error(toolbox_status res, void *extra_info)
+{
 	char msg[48];
-	if(res == TOOLBOX_INVALID_UPDATE_SIZE){
+	if (res == TOOLBOX_INVALID_UPDATE_SIZE)
+	{
 		fw_update_info * update_info = (fw_update_info*)extra_info;
 		s_printf(&msg[0], "%s on %s too large!", update_info->path, drive_friendly_names[update_info->drive]);
-	}else{
+	}
+	else
+	{
 		return;
 	}
 	tui_print_status(COL_ORANGE, msg);
 }
 
-void info_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
+void info_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
 	char sig_str[25]      = "Signature : [Invalid]";
 	char ver_str[25]      = "FW Version: --";
 	char fw_hash_str[25]  = "FW Hash   : --";
@@ -63,7 +75,8 @@ void info_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
 	char fuse_str[25]     = "Fuse Count: --";
 
 	modchip_desc_t desc = {0};
-	if(!modchip_read_desc(&desc)){
+	if (!modchip_read_desc(&desc))
+	{
 		tui_print_status(COL_ORANGE, "Failed to read FW info!");
 		return;
 	}
@@ -71,13 +84,14 @@ void info_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
 	menu->colors = &TUI_COLOR_SCHEME_SHADOW;
 	tui_print_menu(menu);
 
-	if(modchip_is_desc_valid(&desc) || true){
-		s_printf(&sig_str[0],      "Signature : 0x%08x", desc.signature);
-		s_printf(&ver_str[0],      "FW Version: %d.%d", desc.fw_major > 9 ? 9 : desc.fw_major, desc.fw_minor > 99 ? 99 : desc.fw_minor);
-		s_printf(&fw_hash_str[0],  "FW Hash   : 0x%08x", desc.firmware_hash);
-		s_printf(&ipl_hash_str[0], "IPL Hash  : 0x%08x", desc.sdloader_hash);
-		s_printf(&fuse_str[0],     "Fuse Count: %d", desc.fuse_cnt > 999 ? 999 : desc.fuse_cnt);
+	if (modchip_is_desc_valid(&desc))
+	{
+		s_printf(&sig_str[0],  "Signature : 0x%08x", desc.signature);
 	}
+	s_printf(&ver_str[0],      "FW Version: %d.%d", desc.fw_major > 9 ? 9 : desc.fw_major, desc.fw_minor > 99 ? 99 : desc.fw_minor);
+	s_printf(&fw_hash_str[0],  "FW Hash   : 0x%08x", desc.firmware_hash);
+	s_printf(&ipl_hash_str[0], "IPL Hash  : 0x%08x", desc.sdloader_hash);
+	s_printf(&fuse_str[0],     "Fuse Count: %d", desc.fuse_cnt > 999 ? 999 : desc.fuse_cnt);
 
 	tui_entry_t menu_entries[] = {
 		[0] = TUI_ENTRY_TEXT_DISABLED(sig_str,      &menu_entries[1]),
@@ -109,7 +123,8 @@ void info_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
 	menu->colors = &TUI_COLOR_SCHEME_DEFAULT;
 }
 
-static void confirm_menu(const char *title, tui_action_modifying_cb_t cb, tui_entry_menu_t *menu, void *data){
+static void confirm_menu(const char *title, tui_action_modifying_cb_t cb, tui_entry_menu_t *menu, void *data)
+{
 	menu->colors = &TUI_COLOR_SCHEME_SHADOW;
 	tui_print_menu(menu);
 
@@ -147,18 +162,21 @@ static void confirm_menu(const char *title, tui_action_modifying_cb_t cb, tui_en
 	menu->colors = &TUI_COLOR_SCHEME_DEFAULT;
 }
 
-static void print_cmd_fail(){
+static void print_cmd_fail()
+{
 	tui_print_status(COL_ORANGE, "Failed to send command!");
 }
 
-static void disable_all_cmds(tui_entry_menu_t *menu){
+static void disable_all_cmds(tui_entry_menu_t *menu)
+{
 	menu->entries[1].disabled = true;
 	menu->entries[2].disabled = true;
 	menu->entries[3].disabled = true;
 	menu->entries[4].disabled = true;
 }
 
-static void reset(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
+static void reset(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
 	tui_entry_menu_t *top_menu = ((confirm_menu_data_t*)data)->menu;
 
 	u32 start = get_tmr_ms();
@@ -166,23 +184,27 @@ static void reset(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
 
 	bool res = modchip_write_rst_cmd();
 
-	if(get_tmr_ms() - start < 1000){
+	if (get_tmr_ms() - start < 1000)
+	{
 		msleep(1000 - (get_tmr_ms() - start));
 	}
 
-	if(!res){
+	if (!res)
+	{
 		print_cmd_fail();
-	}else{
+	}
+	else
+	{
 		tui_print_status(COL_TEAL, "Reset command sent. Reboot Console!");
 		command_pending = true;
 		disable_all_cmds(top_menu);
 		tui_print_menu(top_menu);
 		entry->disabled = true;
 	}
-
 }
 
-static void rollback(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
+static void rollback(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
 	tui_entry_menu_t *top_menu = ((confirm_menu_data_t*)data)->menu;
 
 	u32 start = get_tmr_ms();
@@ -190,13 +212,17 @@ static void rollback(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
 
 	bool res = modchip_write_rollback_cmd();
 
-	if(get_tmr_ms() - start < 1000){
+	if (get_tmr_ms() - start < 1000)
+	{
 		msleep(1000 - (get_tmr_ms() - start));
 	}
 
-	if(!res){
+	if (!res)
+	{
 		print_cmd_fail();
-	}else{
+	}
+	else
+	{
 		tui_print_status(COL_TEAL, "Rollback command sent. Reboot console!");
 		command_pending = true;
 		disable_all_cmds(top_menu);
@@ -205,27 +231,33 @@ static void rollback(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
 	}
 }
 
-static void reset_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
+static void reset_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
 	confirm_menu("Reset Modchip", reset, menu, NULL);
 }
 
-static void update_fw(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
+static void update_fw(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
 	confirm_menu_data_t *confirm_data = (confirm_menu_data_t*)data;
 	tui_entry_menu_t *top_menu = confirm_data->menu;
 	fw_update_info *update_info = (fw_update_info*)confirm_data->data;
 
 	u32 start = get_tmr_ms();
-	tui_print_status(COL_TEAL, "Writing FW update command...");
+	tui_print_status(COL_TEAL, "Writing FW Update...");
 
 	bool res = modchip_write_fw_update_from_file(update_info->f);
 
-	if(get_tmr_ms() - start < 1000){
+	if (get_tmr_ms() - start < 1000)
+	{
 		msleep(1000 - (get_tmr_ms() - start));
 	}
 
-	if(!res){
-		tui_print_status(COL_ORANGE, "FW update command fail. Reboot console!");
-	}else{
+	if (!res)
+	{
+		tui_print_status(COL_ORANGE, "FW update fail. Reboot console!");
+	}
+	else
+	{
 		tui_print_status(COL_TEAL, "FW update command sent. Reboot console!");
 	}
 	command_pending = true;
@@ -234,23 +266,28 @@ static void update_fw(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
 	entry->disabled = true;
 }
 
-static void update_ipl(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
+static void update_ipl(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
 	confirm_menu_data_t *confirm_data = (confirm_menu_data_t*)data;
 	tui_entry_menu_t *top_menu = confirm_data->menu;
 	fw_update_info *update_info = (fw_update_info*)confirm_data->data;
 
 	u32 start = get_tmr_ms();
-	tui_print_status(COL_TEAL, "Writing IPL update command...");
+	tui_print_status(COL_TEAL, "Writing IPL Update...");
 
 	bool res = modchip_write_ipl_update_from_file(update_info->f);
 
-	if(get_tmr_ms() - start < 1000){
+	if (get_tmr_ms() - start < 1000)
+	{
 		msleep(1000 - (get_tmr_ms() - start));
 	}
 
-	if(!res){
-		tui_print_status(COL_ORANGE, "IPL update command fail. Reboot console!");
-	}else{
+	if (!res)
+	{
+		tui_print_status(COL_ORANGE, "IPL update fail. Reboot console!");
+	}
+	else
+	{
 		tui_print_status(COL_TEAL, "IPL update command sent. Reboot console!");
 	}
 	command_pending = true;
@@ -259,14 +296,16 @@ static void update_ipl(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
 	entry->disabled = true;
 }
 
-static void update_cb(const char *path, u32 size_max, tui_action_modifying_cb_t cb, tui_entry_menu_t *menu){
+static void update_cb(const char *path, u32 size_max, tui_action_modifying_cb_t cb, tui_entry_menu_t *menu)
+{
 	u8 drive = 0;
 	FIL f;
 	FRESULT res;
 
 	res = open_file_on(path, &f, drive);
 
-	if(res != FR_OK){
+	if (res != FR_OK)
+	{
 		handle_file_error(path, drive, res);
 		return;
 	}
@@ -279,7 +318,8 @@ static void update_cb(const char *path, u32 size_max, tui_action_modifying_cb_t 
 		.path = path,
 	};
 
-	if(size > size_max){
+	if (size > size_max)
+	{
 		handle_toolbox_error(TOOLBOX_INVALID_UPDATE_SIZE, &update_info);
 		goto out;
 	}
@@ -294,21 +334,25 @@ static void update_cb(const char *path, u32 size_max, tui_action_modifying_cb_t 
 	f_close(&f);
 }
 
-static void fw_update_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
+static void fw_update_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
 	const char *path = "update.bin";
 	update_cb(path, MODCHIP_FW_MAX_SIZE, update_fw, menu);
 }
 
-static void fw_rollback_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
+static void fw_rollback_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
 	confirm_menu("FW Rollback", rollback, menu, NULL);
 }
 
-static void ipl_update_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
+static void ipl_update_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
 	const char *path = "sdloader.enc";
 	update_cb(path, MODCHIP_BL_MAX_SIZE, update_ipl, menu);
 }
 
-static void save_settings_cb(void *data){
+static void save_settings_cb(void *data)
+{
 	save_settings_data_t *save_settings_data = (save_settings_data_t*)data;
 
 	tui_print_status(COL_TEAL, "Saving settings...");
@@ -317,19 +361,24 @@ static void save_settings_cb(void *data){
 
 	bool res = modchip_set_cfg(save_settings_data->temp_cfg);
 
-	if(get_tmr_ms() - start < 1000){
+	if (get_tmr_ms() - start < 1000)
+	{
 		msleep(1000 - (get_tmr_ms() - start));
 	}
 
-	if(res){
+	if (res)
+	{
 		tui_print_status(COL_TEAL, "Settings saved!");
 		*(save_settings_data->cfg) = *(save_settings_data->temp_cfg);
-	}else{
+	}
+	else
+	{
 		tui_print_status(COL_ORANGE, "Failed to save settings!");
 	}
 }
 
-static void default_action_update(sd_loader_cfg_t *vol_cfg, tui_entry_t *entry, tui_entry_menu_t *menu){
+static void default_action_update(sd_loader_cfg_t *vol_cfg, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
 	static const char* default_action_names[] = {
 		[MODCHIP_DEFAULT_ACTION_OFW]     = "OFW",
 		[MODCHIP_DEFAULT_ACTION_PAYLOAD] = "Payload",
@@ -339,10 +388,12 @@ static void default_action_update(sd_loader_cfg_t *vol_cfg, tui_entry_t *entry, 
 	s_printf((char*)entry->title.text, "Boot action  %s", default_action_names[vol_cfg->default_action]);
 }
 
-static void default_action_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
+static void default_action_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
 	sd_loader_cfg_t *cfg = (sd_loader_cfg_t*)data;
 
-	switch(cfg->default_action){
+	switch(cfg->default_action)
+	{
 	case MODCHIP_DEFAULT_ACTION_PAYLOAD:
 		cfg->default_action = MODCHIP_DEFAULT_ACTION_OFW;
 		break;
@@ -357,11 +408,13 @@ static void default_action_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *
 	default_action_update(cfg, entry, menu);
 }
 
-static void ofw_btn_update(sd_loader_cfg_t *vol_cfg, tui_entry_t *entry, tui_entry_menu_t *menu){
+static void ofw_btn_update(sd_loader_cfg_t *vol_cfg, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
 	s_printf((char*)entry->title.text, "OFW combo    %s", vol_cfg->disable_ofw_btn_combo ? "Disabled" : "Enabled");
 }
 
-static void ofw_btn_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
+static void ofw_btn_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
 	sd_loader_cfg_t *cfg = (sd_loader_cfg_t*)data;
 
 	cfg->disable_ofw_btn_combo = !cfg->disable_ofw_btn_combo;
@@ -369,7 +422,8 @@ static void ofw_btn_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
 	ofw_btn_update(cfg, entry, menu);
 }
 
-static void ipl_settings_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu){
+static void ipl_settings_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
 	sd_loader_cfg_t *cfg = (sd_loader_cfg_t*)data;
 	sd_loader_cfg_t temp_cfg = *cfg;
 
@@ -416,7 +470,8 @@ static void ipl_settings_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *me
 	menu->colors = &TUI_COLOR_SCHEME_DEFAULT;
 }
 
-void toolbox(u32 x, u32 y, sd_loader_cfg_t *cfg){
+void toolbox(u32 x, u32 y, sd_loader_cfg_t *cfg)
+{
 	emmc_initialize(false);
 
 	tui_entry_t menu_entries[] = {
@@ -444,6 +499,11 @@ void toolbox(u32 x, u32 y, sd_loader_cfg_t *cfg){
 		.show_title = true,
 	};
 
+	tui_clear_status();
+	if (is_t210())
+	{
+		menu.entries[4].disabled = true;
+	}
 	tui_menu_start_rot(&menu);
 
 	emmc_end();

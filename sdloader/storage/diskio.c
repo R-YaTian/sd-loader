@@ -74,7 +74,7 @@ DSTATUS disk_initialize (
 		break;
 	case DEV_GPP:
 		failed |= emmc_initialize(false);
-		failed |= emmc_set_partition(0);
+		failed |= emmc_set_partition(EMMC_GPP);
 		break;
 	}
 
@@ -108,7 +108,11 @@ DRESULT disk_read (
 		break;
 	}
 
-	ensure_partition(pdrv);
+	int ret = ensure_partition(pdrv);
+	if (!ret)
+	{
+		return RES_ERROR;
+	}
 
 	return sdmmc_storage_read(storage, actual_sector, count, buff) == 0 ? RES_OK : RES_ERROR;
 }
@@ -136,7 +140,11 @@ DRESULT disk_write (
 		break;
 	}
 
-	ensure_partition(pdrv);
+	int ret = ensure_partition(pdrv);
+	if (!ret)
+	{
+		return RES_ERROR;
+	}
 
 	// we only ever want to write to boot0, return error if trying to write to anyting else
 	if (pdrv == DEV_GPP || pdrv == DEV_BOOT1 || pdrv == DEV_BOOT1_1MB || pdrv == DEV_SD)

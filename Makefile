@@ -36,7 +36,7 @@ all: $(OUT_DIR)/$(PAYLOAD_NAME).bin $(OUT_DIR)/$(PAYLOAD_NAME).enc $(OUT_DIR)/$(
 
 toolbox: $(TOOLS)
 	@$(MAKE) --no-print-directory -C $(SDLOADER_DIR) ENABLE_TOOLBOX=1
-	@cp $(SDLOADER) picofly_toolbox.bin
+	@cp $(SDLOADER) safe_picofly_toolbox.bin
 
 tools: $(TOOLS)
 

@@ -418,9 +418,9 @@ static void do_menu()
 	};
 
 	tui_entry_t menu_entries[] = {
-		[0] = TUI_ENTRY_ACTION_NO_BLANK("Power    Off", power_off_cb, NULL, false, &menu_entries[1]),
-		[1] = TUI_ENTRY_ACTION_NO_BLANK("Reboot   OFW", ofw_cb,       NULL, false, &menu_entries[2]),
-		[2] = TUI_ENTRY_ACTION_NO_BLANK("Load payload", retry_cb,     NULL, false, &menu_entries[3]),
+		[0] = TUI_ENTRY_ACTION_NO_BLANK("Load payload", retry_cb,     NULL, false, &menu_entries[1]),
+		[1] = TUI_ENTRY_ACTION_NO_BLANK("Power    Off", power_off_cb, NULL, false, &menu_entries[2]),
+		[2] = TUI_ENTRY_ACTION_NO_BLANK("Reboot   OFW", ofw_cb,       NULL, false, &menu_entries[3]),
 #if !defined(ENABLE_TOOLBOX)
 		[3] = TUI_ENTRY_ACTION_NO_BLANK("IPL Settings", ipl_settings_cb, &sdloader_cfg, false, NULL),
 #else
@@ -464,14 +464,23 @@ void main()
 
 	if (btn & BTN_VOL_DOWN && btn & BTN_VOL_UP && !sdloader_cfg.disable_ofw_btn_combo)
 	{
+#if defined(TARGET_HWFLY)
+		modchip_hwfly_send_fwcmd_noack(FW_DEEP_SLEEP);
+#endif
 		power_set_state(REBOOT_BYPASS_FUSES);
 	}
 	else if (btn & BTN_VOL_UP && !(btn & BTN_VOL_DOWN))
 	{
+#if defined(TARGET_HWFLY)
+		modchip_hwfly_send_fwcmd_noack(FW_ENTER_DFU);
+#endif
 		handle_sdloader_status(SD_LOADER_FORCE_MENU);
 	}
 	else
 	{
+#if defined(TARGET_HWFLY)
+		modchip_hwfly_send_fwcmd_noack(FW_DEEP_SLEEP);
+#endif
 #if !defined(ENABLE_TOOLBOX)
 		if (sdloader_cfg.default_action == MODCHIP_DEFAULT_ACTION_PAYLOAD)
 		{

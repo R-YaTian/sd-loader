@@ -30,13 +30,16 @@ TOOLS = $(BMP2HDR_DIR) $(BIN2HDR_DIR)
 
 BIN2HDR = $(BIN2HDR_DIR)/output/bin2header.exe
 
-.PHONY: all toolbox tools $(TOOLS) bctbin
+.PHONY: all toolbox hwfly tools $(TOOLS) bctbin
 
 all: $(OUT_DIR)/$(PAYLOAD_NAME).bin $(OUT_DIR)/$(PAYLOAD_NAME).enc $(OUT_DIR)/$(PAYLOAD_NAME).h $(BCT_HEADERS)
 
 toolbox: $(TOOLS)
 	@$(MAKE) --no-print-directory -C $(SDLOADER_DIR) ENABLE_TOOLBOX=1
 	@cp $(SDLOADER) safe_picofly_toolbox.bin
+
+hwfly: TARGET_HWFLY=1
+hwfly: all
 
 tools: $(TOOLS)
 
@@ -45,7 +48,7 @@ clean: $(TOOLS) $(LOADER) $(SDLOADER)
 
 $(TOOLS):
 	@echo building $@
-	@$(MAKE) --no-print-directory -C $@ $(if $(filter toolbox,$(MAKECMDGOALS)),all,$(MAKECMDGOALS))
+	@$(MAKE) --no-print-directory -C $@ $(if $(filter toolbox hwfly,$(MAKECMDGOALS)),all,$(MAKECMDGOALS))
 
 $(OUT_DIR)/$(PAYLOAD_NAME).h: $(OUT_DIR)/$(PAYLOAD_NAME).enc $(OUT_DIR) $(TOOLS)
 	@echo building $@
@@ -62,10 +65,10 @@ $(OUT_DIR)/$(PAYLOAD_NAME).bin : | $(OUT_DIR) $(SDLOADER)
 	@cp $(SDLOADER) $@
 
 $(LOADER):
-	@$(MAKE) --no-print-directory -C $(LOADER_DIR) $(MAKECMDGOALS) LOADER_LOAD_ADDR=$(LOADER_LOAD_ADDR)
+	@$(MAKE) --no-print-directory -C $(LOADER_DIR) $(if $(TARGET_HWFLY),all,$(MAKECMDGOALS)) LOADER_LOAD_ADDR=$(LOADER_LOAD_ADDR)
 
 $(SDLOADER): $(TOOLS)
-	@$(MAKE) --no-print-directory -C $(SDLOADER_DIR) $(MAKECMDGOALS)
+	@$(MAKE) --no-print-directory -C $(SDLOADER_DIR) $(if $(TARGET_HWFLY),TARGET_HWFLY=$(TARGET_HWFLY)) $(if $(TARGET_HWFLY),all,$(MAKECMDGOALS))
 
 
 $(BCT_HEADERS): $(OUT_DIR)/%.h: $(BUILD_DIR)/%.bin

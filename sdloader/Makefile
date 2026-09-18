@@ -46,6 +46,8 @@ OBJS = $(addprefix $(BUILD_DIR)/$(TARGET)/, \
 ifeq ($(ENABLE_TOOLBOX),1)
 OBJS += $(addprefix $(BUILD_DIR)/$(TARGET)/, modchip_toolbox.o sprintf.o)
 CUSTOMDEFINES += -DENABLE_TOOLBOX
+else ifeq ($(TARGET_HWFLY),1)
+CUSTOMDEFINES += -DTARGET_HWFLY
 endif
 
 # startup code must be compiled with lto disabled

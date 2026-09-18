@@ -10,6 +10,7 @@
 #include <libs/fatfs/diskio.h>
 
 #define MODCHIP_MAGIC 0xAA5458BA
+#define MODCHIP_RECV  0xAA5458BB
 
 static sd_loader_cfg_t default_cfg = {
 	.magic1 = MODCHIP_MAGIC,
@@ -27,7 +28,9 @@ static void _init_mmc(){
 	}
 }
 
-void modchip_confirm_execution(){
+#if !defined(TARGET_HWFLY)
+void modchip_confirm_execution()
+{
 	// modchip waits for IDLE_CMD with magic argument to confirm the payload is running
 	_init_mmc();
 	sdmmc_cmd_t cmdbuf;
@@ -35,6 +38,67 @@ void modchip_confirm_execution(){
 	sdmmc_execute_cmd(&emmc_sdmmc, &cmdbuf, NULL, NULL);
 	sdmmc_end(&emmc_sdmmc);
 }
+#else
+static void modchip_hwfly_send(u8 *buf)
+{
+	// emmc_sdmmc must be initialized at this point with SDMMC_BUS_WIDTH_1 and SDHCI_TIMING_MMC_ID
+	// not supported by picofly fw
+	sdmmc_cmd_t cmdbuf;
+	sdmmc_req_t req;
+	sdmmc_init_cmd(&cmdbuf, MMC_GO_IDLE_STATE, MODCHIP_MAGIC, SDMMC_RSP_TYPE_1, 0);
+
+	req.blksize = MODCHIP_SECTOR_SIZE;
+	req.num_sectors = 1;
+	req.is_write = 1;
+	req.is_multi_block = 0;
+	req.is_auto_stop_trn = 0;
+	req.buf = buf;
+
+	sdmmc_execute_cmd(&emmc_sdmmc, &cmdbuf, &req, NULL);
+}
+
+static void modchip_hwfly_recv(u8 *buf)
+{
+	sdmmc_cmd_t cmdbuf;
+	sdmmc_req_t reqbuf;
+	sdmmc_init_cmd(&cmdbuf, MMC_GO_IDLE_STATE, MODCHIP_RECV, SDMMC_RSP_TYPE_1, 0);
+
+	reqbuf.buf = buf;
+	reqbuf.blksize = MODCHIP_SECTOR_SIZE;
+	reqbuf.num_sectors = 1;
+	reqbuf.is_write = 0;
+	reqbuf.is_multi_block = 0;
+	reqbuf.is_auto_stop_trn = 0;
+
+	sdmmc_execute_cmd(&emmc_sdmmc, &cmdbuf, &reqbuf, NULL);
+}
+
+void modchip_confirm_execution()
+{
+	_init_mmc();
+	u8 *modchip_buf = (u8*)SDMMC_UPPER_BUFFER;
+	memset(modchip_buf, 0, MODCHIP_SECTOR_SIZE);
+	modchip_buf[0] = FW_GET_VER;
+    modchip_hwfly_send(modchip_buf);
+	do
+	{
+		msleep(10);
+		modchip_hwfly_recv(modchip_buf);
+	}
+	while (modchip_buf[0] != (u8) ~FW_GET_VER);
+	sdmmc_end(&emmc_sdmmc);
+}
+
+void modchip_hwfly_send_fwcmd_noack(u8 cmd)
+{
+	_init_mmc();
+	u8 *modchip_buf = (u8*)SDMMC_UPPER_BUFFER;
+	memset(modchip_buf, 0, MODCHIP_SECTOR_SIZE);
+	modchip_buf[0] = cmd;
+	modchip_hwfly_send(modchip_buf);
+	sdmmc_end(&emmc_sdmmc);
+}
+#endif
 
 bool modchip_get_cfg(sd_loader_cfg_t *cfg){
 	u8 *buf = (u8*)SDMMC_UPPER_BUFFER;

@@ -26,6 +26,12 @@
 
 #define MODCHIP_SECTOR_SIZE       512
 
+enum HWFLY_FW_COMMANDS {
+	FW_GET_VER    = 0x44,
+	FW_DEEP_SLEEP = 0x55,
+	FW_ENTER_DFU  = 0xAA
+};
+
 typedef enum{
 	MODCHIP_CMD_FW_UPDATE = 0x6db92148,
 	MODCHIP_CMD_RST       = 0x515205c5,
@@ -68,7 +74,9 @@ void modchip_get_cfg_or_default(sd_loader_cfg_t *cfg);
 bool modchip_set_cfg(sd_loader_cfg_t *cfg);
 bool modchip_is_cfg_valid(sd_loader_cfg_t *cfg);
 void modchip_confirm_execution();
-
+#if defined(TARGET_HWFLY)
+void modchip_hwfly_send_fwcmd_noack(u8 cmd);
+#endif
 bool modchip_write_rst_cmd();
 bool modchip_write_fw_update_cmd(u32 sector_start, u32 sector_cnt);
 bool modchip_write_rollback_cmd();

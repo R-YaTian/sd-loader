@@ -227,6 +227,9 @@ static void power_off_cb(void *data)
 
 static void ofw_cb(void *data)
 {
+#if defined(TARGET_HWFLY)
+	modchip_hwfly_send_fwcmd_noack(FW_DEEP_SLEEP);
+#endif
 	deinit();
 	power_set_state(REBOOT_BYPASS_FUSES);
 }
@@ -471,9 +474,6 @@ void main()
 	}
 	else if (btn & BTN_VOL_UP && !(btn & BTN_VOL_DOWN))
 	{
-#if defined(TARGET_HWFLY)
-		modchip_hwfly_send_fwcmd_noack(FW_ENTER_DFU);
-#endif
 		handle_sdloader_status(SD_LOADER_FORCE_MENU);
 	}
 	else

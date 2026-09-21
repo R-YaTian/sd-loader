@@ -261,14 +261,14 @@ static void retry_cb(void *data)
 #if defined(ENABLE_TOOLBOX)
 static void clear_screen_except_logo_and_status()
 {
-	gfx_clear_rect_rot(COL_BLACK, 0, 88, gfx_ctxt.height, gfx_ctxt.width - 80);
+	gfx_clear_rect_rot(COL_BLACK, 0, TUI_MENUS_POS_Y, gfx_ctxt.height, gfx_ctxt.width - 80);
 }
 
 static void start_toolbox()
 {
 	gfx_con_setpos_rot(0, 0);
 	clear_screen_except_logo_and_status();
-	toolbox(0, 88, &sdloader_cfg);
+	toolbox(0, TUI_MENUS_POS_Y, &sdloader_cfg);
 }
 
 static void toolbox_cb()
@@ -387,7 +387,7 @@ static void ipl_settings_cb(void *data)
 			.text = NULL,
 		},
 		.pos_x      = (gfx_ctxt.height - 21 * 8) / 2,
-		.pos_y      = 88,
+		.pos_y      = TUI_MENUS_POS_Y,
 		.pad        = 21,
 		.height     = ARRAY_SIZE(menu_entries) + 2,
 		.width      = 21,
@@ -412,8 +412,8 @@ static void do_menu()
 		.height = 6,
 		.pad = 12,
 		.width = 12,
-		.pos_x = (gfx_ctxt.height - 12 * 8) / 2 - 4,
-		.pos_y = 88,
+		.pos_x = (gfx_ctxt.height - 12 * 8) / 2,
+		.pos_y = TUI_MENUS_POS_Y,
 		.title = {
 			.text = NULL,
 		},

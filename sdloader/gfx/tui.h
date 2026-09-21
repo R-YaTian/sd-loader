@@ -4,7 +4,8 @@
 #include <utils/types.h>
 #include <gfx.h>
 
-#define TUI_STATUS_POS_Y 72
+#define TUI_MENUS_POS_Y   88
+#define TUI_STATUS_POS_Y  75
 #define TUI_TOPINFO_POS_Y 10
 
 #define TUI_ENTRY_TEXT(_text, _next) \

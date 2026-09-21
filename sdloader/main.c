@@ -412,7 +412,7 @@ static void do_menu()
 		.height = 6,
 		.pad = 12,
 		.width = 12,
-		.pos_x = (gfx_ctxt.height - 12 * 8) / 2,
+		.pos_x = (gfx_ctxt.height - 12 * 8) / 2 - 1,
 		.pos_y = TUI_MENUS_POS_Y,
 		.title = {
 			.text = NULL,

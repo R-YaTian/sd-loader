@@ -37,15 +37,15 @@ typedef enum{
 	MODCHIP_CMD_RST       = 0x515205c5,
 }modchip_cmd;
 
-typedef struct{
+typedef struct {
 	u32 cmd;
-	union{
-		struct{
+	union {
+		struct {
 			u32 fw_sector_start;
 			u32 fw_sector_cnt;
-		}fw_update_info;
+		} fw_update_info;
 	};
-}modchip_cmd_t;
+} modchip_cmd_t;
 
 typedef struct{
 	u32 signature;

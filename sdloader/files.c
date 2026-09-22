@@ -4,13 +4,6 @@
 #include <utils/types.h>
 #include <tui.h>
 
-const char* drive_friendly_names[4] = {
-    [SDLOADER_DRIVE_BOOT1]     = "BOOT 1",
-    [SDLOADER_DRIVE_BOOT1_1MB] = "BOOT 1",
-    [SDLOADER_DRIVE_SD]        = "SD",
-    [SDLOADER_DRIVE_GPP]       = "GPP",
-};
-
 const char* drive_names[4] = {
     [SDLOADER_DRIVE_SD]        = "0:",
     [SDLOADER_DRIVE_BOOT1_1MB] = "2:",

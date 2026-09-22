@@ -89,7 +89,7 @@ static SD_LOADER_STATUS read_payload(FIL *f)
 static void display_logo()
 {
 	u32 x_pos = (gfx_ctxt.height - logo_width) / 2;
-	gfx_render_bmp_2bit_rot(logo_arr, logo_width, logo_height, x_pos, 25);
+	gfx_render_bmp_2bit_rot(logo_arr, logo_width, logo_height, x_pos, 30);
 }
 
 static void init_display()

@@ -25,8 +25,7 @@ typedef struct {
 typedef struct {
 	FIL *f;
 	const char *path;
-	u8 drive;
-} fw_update_info;
+} update_file_info;
 
 typedef struct {
 	sd_loader_cfg_t *cfg;
@@ -42,7 +41,7 @@ static void handle_file_error(const char *path, u8 drive, FRESULT res)
 	}
 	else if(res != FR_OK)
 	{
-		s_printf(&msg[0], "Error opening %s from %s!", path, drive_friendly_names[drive]);
+		s_printf(&msg[0], "Error opening %s from SD!", path);
 	}
 	else
 	{
@@ -56,8 +55,8 @@ static void handle_toolbox_error(toolbox_status res, void *extra_info)
 	char msg[48];
 	if (res == TOOLBOX_INVALID_UPDATE_SIZE)
 	{
-		fw_update_info * update_info = (fw_update_info*)extra_info;
-		s_printf(&msg[0], "%s on %s too large!", update_info->path, drive_friendly_names[update_info->drive]);
+		update_file_info *update_info = (update_file_info*)extra_info;
+		s_printf(&msg[0], "%s on SD too large!", update_info->path);
 	}
 	else
 	{
@@ -240,7 +239,7 @@ static void update_fw(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 {
 	confirm_menu_data_t *confirm_data = (confirm_menu_data_t*)data;
 	tui_entry_menu_t *top_menu = confirm_data->menu;
-	fw_update_info *update_info = (fw_update_info*)confirm_data->data;
+	update_file_info *update_info = (update_file_info*)confirm_data->data;
 
 	u32 start = get_tmr_ms();
 	tui_print_status(COL_TEAL, "Writing FW Update...");
@@ -270,7 +269,7 @@ static void update_ipl(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 {
 	confirm_menu_data_t *confirm_data = (confirm_menu_data_t*)data;
 	tui_entry_menu_t *top_menu = confirm_data->menu;
-	fw_update_info *update_info = (fw_update_info*)confirm_data->data;
+	update_file_info *update_info = (update_file_info*)confirm_data->data;
 
 	u32 start = get_tmr_ms();
 	tui_print_status(COL_TEAL, "Writing IPL Update...");
@@ -312,8 +311,7 @@ static void update_cb(const char *path, u32 size_max, tui_action_modifying_cb_t 
 
 	u32 size = f_size(&f);
 
-	fw_update_info update_info = {
-		.drive = drive,
+	update_file_info update_info = {
 		.f = &f,
 		.path = path,
 	};
@@ -324,9 +322,7 @@ static void update_cb(const char *path, u32 size_max, tui_action_modifying_cb_t 
 		goto out;
 	}
 
-	char title[25];
-
-	s_printf(&title[0], "Apply update from %s", drive_friendly_names[drive]);
+	char title[] = "Apply update from SD";
 
 	confirm_menu(title, cb, menu, &update_info);
 

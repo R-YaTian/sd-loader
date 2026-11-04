@@ -1,8 +1,7 @@
-#include "tui.h"
+#include <tui.h>
 
 #include <display/di.h>
 #include <gfx.h>
-#include <gfx_utils.h>
 #include <soc/timer.h>
 #include <string.h>
 #include <utils/btn.h>

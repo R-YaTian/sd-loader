@@ -43,10 +43,11 @@ OBJS = $(addprefix $(BUILD_DIR)/$(TARGET)/, \
 	diskio.o ff.o ffsystem.o ffunicode.o max17050.o \
 	loader.o modchip.o files.o )
 
-ifeq ($(ENABLE_TOOLBOX),1)
+ifeq ($(PICOFLY_TOOLBOX),1)
 OBJS += $(addprefix $(BUILD_DIR)/$(TARGET)/, modchip_toolbox.o sprintf.o)
-CUSTOMDEFINES += -DENABLE_TOOLBOX
+CUSTOMDEFINES += -DPICOFLY_TOOLBOX
 else ifeq ($(TARGET_HWFLY),1)
+OBJS += $(addprefix $(BUILD_DIR)/$(TARGET)/, modchip_toolbox.o sprintf.o hwfly.o)
 CUSTOMDEFINES += -DTARGET_HWFLY
 endif
 

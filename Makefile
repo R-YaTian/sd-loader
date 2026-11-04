@@ -35,7 +35,7 @@ BIN2HDR = $(BIN2HDR_DIR)/output/bin2header.exe
 all: $(OUT_DIR)/$(PAYLOAD_NAME).bin $(OUT_DIR)/$(PAYLOAD_NAME).enc $(OUT_DIR)/$(PAYLOAD_NAME).h $(BCT_HEADERS)
 
 toolbox: $(TOOLS)
-	@$(MAKE) --no-print-directory -C $(SDLOADER_DIR) ENABLE_TOOLBOX=1
+	@$(MAKE) --no-print-directory -C $(SDLOADER_DIR) PICOFLY_TOOLBOX=1
 	@cp $(SDLOADER) safe_picofly_toolbox.bin
 
 hwfly: TARGET_HWFLY=1

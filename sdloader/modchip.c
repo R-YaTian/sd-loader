@@ -19,11 +19,13 @@ static sd_loader_cfg_t default_cfg = {
 	.disable_ofw_btn_combo = false,
 };
 
-static void _init_mmc(){
+void _init_mmc()
+{
 	u32 start = get_tmr_us();
 	sdmmc_init(&emmc_sdmmc, SDMMC_4, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_MMC_ID);
 	u32 now = get_tmr_us();
-	if(now - start < 40000){
+	if (now - start < 40000)
+	{
 		usleep(start + 40000 - now);
 	}
 }
@@ -39,7 +41,12 @@ void modchip_confirm_execution()
 	sdmmc_end(&emmc_sdmmc);
 }
 #else
-static void modchip_hwfly_send(u8 *buf)
+void modchip_confirm_execution()
+{
+	modchip_hwfly_send_fwcmd_noack(FW_GET_VER);
+}
+
+void modchip_hwfly_send(u8 *buf)
 {
 	// emmc_sdmmc must be initialized at this point with SDMMC_BUS_WIDTH_1 and SDHCI_TIMING_MMC_ID
 	// not supported by picofly fw
@@ -57,9 +64,21 @@ static void modchip_hwfly_send(u8 *buf)
 	sdmmc_execute_cmd(&emmc_sdmmc, &cmdbuf, &req, NULL);
 }
 
-void modchip_confirm_execution()
+void modchip_hwfly_recv(u8 *buf)
 {
-	modchip_hwfly_send_fwcmd_noack(FW_GET_VER);
+	sdmmc_cmd_t cmdbuf;
+	sdmmc_req_t reqbuf;
+
+	sdmmc_init_cmd(&cmdbuf, MMC_GO_IDLE_STATE, MODCHIP_RECV, SDMMC_RSP_TYPE_1, 0);
+
+	reqbuf.buf = buf;
+	reqbuf.blksize = MODCHIP_SECTOR_SIZE;
+	reqbuf.num_sectors = 1;
+	reqbuf.is_write = 0;
+	reqbuf.is_multi_block = 0;
+	reqbuf.is_auto_stop_trn = 0;
+
+	sdmmc_execute_cmd(&emmc_sdmmc, &cmdbuf, &reqbuf, NULL);
 }
 
 void modchip_hwfly_send_fwcmd_noack(u8 cmd)

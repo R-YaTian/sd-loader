@@ -9,7 +9,10 @@
 #include <utils/sprintf.h>
 #include <utils/types.h>
 #include <utils/util.h>
-#include "memory_map.h"
+
+#if defined(TARGET_HWFLY)
+#include "hwfly.h"
+#endif
 
 static bool command_pending = false;
 
@@ -32,7 +35,7 @@ typedef struct {
 	sd_loader_cfg_t *temp_cfg;
 } save_settings_data_t;
 
-static void handle_file_error(const char *path, u8 drive, FRESULT res)
+static void handle_file_error(const char *path, FRESULT res)
 {
 	char msg[48];
 	if (res == FR_NO_FILE)
@@ -168,6 +171,9 @@ static void print_cmd_fail()
 
 static void disable_all_cmds(tui_entry_menu_t *menu)
 {
+#if defined(TARGET_HWFLY)
+	menu->entries[0].disabled = true; // Disable FW Info
+#endif
 	menu->entries[1].disabled = true;
 	menu->entries[2].disabled = true;
 	menu->entries[3].disabled = true;
@@ -181,7 +187,11 @@ static void reset(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 	u32 start = get_tmr_ms();
 	tui_print_status(COL_TEAL, "Writing reset command...");
 
+#if defined(TARGET_HWFLY)
+	bool res = (hwfly_reset_train_data() == 0);
+#else
 	bool res = modchip_write_rst_cmd();
+#endif
 
 	if (get_tmr_ms() - start < 1000)
 	{
@@ -202,6 +212,28 @@ static void reset(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 	}
 }
 
+#if defined(TARGET_HWFLY)
+static void deepsleep(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
+	tui_entry_menu_t *top_menu = ((confirm_menu_data_t*)data)->menu;
+
+	u32 start = get_tmr_ms();
+	tui_print_status(COL_TEAL, "Sending Deep Sleep command...");
+
+	modchip_hwfly_send_fwcmd_noack(FW_DEEP_SLEEP);
+
+	if (get_tmr_ms() - start < 1000)
+	{
+		msleep(1000 - (get_tmr_ms() - start));
+	}
+
+	tui_print_status(COL_TEAL, "Modchip is now in Deep Sleep!");
+	command_pending = true;
+	disable_all_cmds(top_menu);
+	tui_print_menu(top_menu);
+	entry->disabled = true;
+}
+#else
 static void rollback(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 {
 	tui_entry_menu_t *top_menu = ((confirm_menu_data_t*)data)->menu;
@@ -229,10 +261,11 @@ static void rollback(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 		entry->disabled = true;
 	}
 }
+#endif
 
 static void reset_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 {
-	confirm_menu("Reset Modchip", reset, menu, NULL);
+	confirm_menu("Reset Train Data", reset, menu, NULL);
 }
 
 static void update_fw(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
@@ -305,7 +338,7 @@ static void update_cb(const char *path, u32 size_max, tui_action_modifying_cb_t 
 
 	if (res != FR_OK)
 	{
-		handle_file_error(path, drive, res);
+		handle_file_error(path, res);
 		return;
 	}
 
@@ -326,7 +359,7 @@ static void update_cb(const char *path, u32 size_max, tui_action_modifying_cb_t 
 
 	confirm_menu(title, cb, menu, &update_info);
 
-	out:
+out:
 	f_close(&f);
 }
 
@@ -336,10 +369,17 @@ static void fw_update_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 	update_cb(path, MODCHIP_FW_MAX_SIZE, update_fw, menu);
 }
 
+#if defined(TARGET_HWFLY)
+static void deep_sleep_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
+{
+	confirm_menu("Enter deep sleep?", deepsleep, menu, NULL);
+}
+#else
 static void fw_rollback_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 {
 	confirm_menu("FW Rollback", rollback, menu, NULL);
 }
+#endif
 
 static void ipl_update_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 {
@@ -473,7 +513,11 @@ void toolbox(u32 x, u32 y, sd_loader_cfg_t *cfg)
 	tui_entry_t menu_entries[] = {
 		[0] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("FW  Info", info_cb, NULL, false, &menu_entries[1]),
 		[1] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("FW  Update", fw_update_cb, NULL, command_pending, &menu_entries[2]),
+#if !defined(TARGET_HWFLY)
 		[2] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("FW  Rollback", fw_rollback_cb, NULL, command_pending, &menu_entries[3]),
+#else
+		[2] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("Deep Sleep", deep_sleep_cb, NULL, command_pending, &menu_entries[3]),
+#endif
 		[3] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("Train  Reset", reset_cb, NULL, command_pending, &menu_entries[4]),
 		[4] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("IPL Update", ipl_update_cb, NULL, command_pending, &menu_entries[5]),
 		[5] = TUI_ENTRY_ACTION_MODIFYING_NO_BLANK("IPL Settings", ipl_settings_cb, cfg, false, &menu_entries[6]),

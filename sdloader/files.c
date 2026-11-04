@@ -1,8 +1,6 @@
 #include "files.h"
 #include <libs/fatfs/ff.h>
-#include <utils/btn.h>
 #include <utils/types.h>
-#include <tui.h>
 
 const char* drive_names[4] = {
     [SDLOADER_DRIVE_SD]        = "0:",

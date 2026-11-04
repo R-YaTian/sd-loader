@@ -1,20 +1,14 @@
 #include <libs/fatfs/ff.h>
 #include <memory_map.h>
 #include <gfx.h>
-#include <soc/timer.h>
 #include <storage/emmc.h>
-#include <storage/mmc_def.h>
 #include <storage/sd.h>
-#include <storage/sdmmc.h>
 #include <string.h>
 #include <tui.h>
 #include <utils/btn.h>
 #include <utils/types.h>
 #include <utils/util.h>
-#include <soc/t210.h>
 #include <soc/hw_init.h>
-#include <mem/mc.h>
-#include <mem/heap.h>
 #include <display/di.h>
 #include "logo.bmp.h"
 #include <power/bq24193.h>
@@ -26,7 +20,7 @@
 #include "files.h"
 #include <soc/bpmp.h>
 
-#if defined(ENABLE_TOOLBOX)
+#if PICOFLY_TOOLBOX || TARGET_HWFLY
 #include "modchip_toolbox.h"
 #endif
 
@@ -258,7 +252,7 @@ static void retry_cb(void *data)
 	try_launch_payload();
 }
 
-#if defined(ENABLE_TOOLBOX)
+#if defined(PICOFLY_TOOLBOX) || defined(TARGET_HWFLY)
 static void clear_screen_except_logo_and_status()
 {
 	gfx_clear_rect_rot(COL_BLACK, 0, TUI_MENUS_POS_Y, gfx_ctxt.height, gfx_ctxt.width - 80);
@@ -421,13 +415,15 @@ static void do_menu()
 	};
 
 	tui_entry_t menu_entries[] = {
-		[0] = TUI_ENTRY_ACTION_NO_BLANK("Load payload", retry_cb,     NULL, false, &menu_entries[1]),
+		[0] = TUI_ENTRY_ACTION_NO_BLANK("Load Payload", retry_cb,     NULL, false, &menu_entries[1]),
 		[1] = TUI_ENTRY_ACTION_NO_BLANK("Power    Off", power_off_cb, NULL, false, &menu_entries[2]),
 		[2] = TUI_ENTRY_ACTION_NO_BLANK("Reboot   OFW", ofw_cb,       NULL, false, &menu_entries[3]),
-#if !defined(ENABLE_TOOLBOX)
-		[3] = TUI_ENTRY_ACTION_NO_BLANK("IPL Settings", ipl_settings_cb, &sdloader_cfg, false, NULL),
+#if defined(PICOFLY_TOOLBOX)
+		[3] = TUI_ENTRY_ACTION_NO_BLANK("Pico Toolbox", toolbox_cb,   NULL, false, NULL),
+#elif defined(TARGET_HWFLY)
+		[3] = TUI_ENTRY_ACTION_NO_BLANK("hwflyToolbox", toolbox_cb,   NULL, false, NULL),
 #else
-		[3] = TUI_ENTRY_ACTION_NO_BLANK("Open toolbox", toolbox_cb,   NULL, false, NULL),
+		[3] = TUI_ENTRY_ACTION_NO_BLANK("IPL Settings", ipl_settings_cb, &sdloader_cfg, false, NULL),
 #endif
 	};
 
@@ -463,6 +459,8 @@ void main()
 
 	get_cfg();
 
+	sd_initialize(false);
+
 	u8 btn = btn_read_vol();
 
 	if (btn & BTN_VOL_DOWN && btn & BTN_VOL_UP && !sdloader_cfg.disable_ofw_btn_combo)
@@ -481,7 +479,7 @@ void main()
 #if defined(TARGET_HWFLY)
 		modchip_hwfly_send_fwcmd_noack(FW_DEEP_SLEEP);
 #endif
-#if !defined(ENABLE_TOOLBOX)
+#if !defined(PICOFLY_TOOLBOX)
 		if (sdloader_cfg.default_action == MODCHIP_DEFAULT_ACTION_PAYLOAD)
 		{
 			try_launch_payload();

@@ -70,7 +70,6 @@ $(LOADER):
 $(SDLOADER): $(TOOLS)
 	@$(MAKE) --no-print-directory -C $(SDLOADER_DIR) $(if $(TARGET_HWFLY),TARGET_HWFLY=$(TARGET_HWFLY)) $(if $(TARGET_HWFLY),all,$(MAKECMDGOALS))
 
-
 $(BCT_HEADERS): $(OUT_DIR)/%.h: $(BUILD_DIR)/%.bin
 	@echo Building $@ ...
 	@$(BIN2HDR) $< $@

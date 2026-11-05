@@ -21,6 +21,7 @@
 
 #define SESSION_INFO_FORMAT_VER 2
 #define SESSION_INFO_MAGIC 0x80B54D
+#define SESSION_INFO_HWFLY_ID 0x2E49564D
 
 typedef struct
 {
@@ -65,11 +66,11 @@ typedef struct
 	uint32_t fpga_type;
 
 	glitch_cfg_t glitch_cfg;
-
 } __attribute__((packed)) session_info_t;
 
 bool hwfly_update_fw(FIL *fw);
 uint32_t hwfly_reset_train_data();
 uint32_t hwfly_session_info(uint8_t *fmt, session_info_t *si);
+uint32_t hwfly_fw_version(uint32_t *out_version);
 
 #endif

@@ -70,6 +70,7 @@ static void handle_toolbox_error(toolbox_status res, void *extra_info)
 
 void info_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 {
+#if !defined(TARGET_HWFLY)
 	char sig_str[25]      = "Signature : [Invalid]";
 	char ver_str[25]      = "FW Version: --";
 	char fw_hash_str[25]  = "FW Hash   : --";
@@ -104,6 +105,74 @@ void info_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 		[5] = TUI_ENTRY_TEXT("\n", &menu_entries[6]),
 		[6] = TUI_ENTRY_BACK(NULL),
 	};
+#else
+	char board_str[25]    = "Board  Type: --";
+	char ver_str[25]      = "FW  Version: --";
+	char device_str[25]   = "Device Type: --";
+	char used_str[25]     = "Glitch used: --";
+	char loader_str[25]   = "SD   Loader: --";
+
+	uint32_t fw_version;
+	if (hwfly_fw_version(&fw_version) != 0)
+	{
+		tui_print_status(COL_ORANGE, "Failed to read FW version!");
+		return;
+	}
+
+	u8 fmt;
+	session_info_t si;
+	if (!hwfly_session_info(&fmt, &si) && fmt == SESSION_INFO_FORMAT_VER)
+	{
+		const char* board_type;
+		if (si.fpga_type == SESSION_INFO_HWFLY_ID && si.board_id == BOARD_ID_CORE) 
+			board_type = "HWFLY CORE";
+		else if (si.fpga_type == SESSION_INFO_HWFLY_ID && si.board_id == BOARD_ID_LITE) 
+			board_type = "HWFLY OLED";
+		else if (si.board_id == BOARD_ID_CORE) 
+			board_type = "SX-CORE";
+		else if (si.board_id == BOARD_ID_LITE) 
+			board_type = "SX-LITE";
+		else 
+			board_type = "Unknown";
+
+		const char* device_type;
+		if (si.device_type == DEVICE_TYPE_ERISTA)
+			device_type = "Erista";
+		else if (si.device_type == DEVICE_TYPE_MARIKO)
+			device_type = "Mariko";
+		else if (si.fpga_type == SESSION_INFO_HWFLY_ID && si.board_id == BOARD_ID_LITE && si.device_type == DEVICE_TYPE_LITE)
+			device_type = "OLED";
+		else if (si.device_type == DEVICE_TYPE_LITE)
+			device_type = "Lite";
+		else
+			device_type = "Unknown";
+
+		u32 version_print = fw_version < 0x100 ? (fw_version << 8) : fw_version;
+		s_printf(&ver_str[0],    "FW  Version: %d.%d.%d", (version_print >> 16) & 0xFF, (version_print >> 8) & 0xFF, version_print & 0xFF);
+		s_printf(&board_str[0],  "Board  Type: %s", board_type);
+		s_printf(&device_str[0], "Device Type: %s", device_type);
+		s_printf(&used_str[0],   "Glitch used: %d", si.glitch_attempt);
+		s_printf(&loader_str[0], "SD   Loader: %s", si.payload_flashed ? "Flashed" : "Not flash");
+	}
+	else
+	{
+		tui_print_status(COL_ORANGE, "Failed to get session info!");
+		return;
+	}
+
+	menu->colors = &TUI_COLOR_SCHEME_SHADOW;
+	tui_print_menu(menu);
+
+	tui_entry_t menu_entries[] = {
+		[0] = TUI_ENTRY_TEXT_DISABLED(ver_str,      &menu_entries[1]),
+		[1] = TUI_ENTRY_TEXT_DISABLED(board_str,    &menu_entries[2]),
+		[2] = TUI_ENTRY_TEXT_DISABLED(device_str,   &menu_entries[3]),
+		[3] = TUI_ENTRY_TEXT_DISABLED(used_str,     &menu_entries[4]),
+		[4] = TUI_ENTRY_TEXT_DISABLED(loader_str,   &menu_entries[5]),
+		[5] = TUI_ENTRY_TEXT("\n", &menu_entries[6]),
+		[6] = TUI_ENTRY_BACK(NULL),
+	};
+#endif
 
 	tui_entry_menu_t info_menu = {
 		.entries    = menu_entries,
@@ -365,7 +434,11 @@ out:
 
 static void fw_update_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 {
+#if defined(TARGET_HWFLY)
+	const char *path = "firmware.bin";
+#else
 	const char *path = "update.bin";
+#endif
 	update_cb(path, MODCHIP_FW_MAX_SIZE, update_fw, menu);
 }
 
@@ -544,6 +617,9 @@ void toolbox(u32 x, u32 y, sd_loader_cfg_t *cfg)
 	{
 		menu.entries[4].disabled = true;
 	}
+#if defined(TARGET_HWFLY)
+	menu.entries[1].disabled = true;
+#endif
 	tui_menu_start_rot(&menu);
 
 	emmc_end();

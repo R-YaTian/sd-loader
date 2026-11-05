@@ -30,7 +30,6 @@
 
 #define DFU_XFER_BYTES 64
 #define DFU_FW_OFFSET  0x3000
-#define DFU_FLASH_SIZE 0x20000
 
 #define TRAIN_DATA_ACK         0xA11600D
 #define TRAIN_DATA_RESET_MAGIC 0x14CCB847
@@ -38,15 +37,6 @@
 enum DFU_ERRORS
 {
 	ERROR_SUCCESS                = 0x70000000,
-	ERROR_INVALID_PACKAGE_LENGTH = 0x40000000,
-	ERROR_INVALID_OFFSET,       // 0x40000001
-	ERROR_INVALID_LENGTH,       // 0x40000002
-	ERROR_ERASE_FAILED,         // 0x40000003
-	ERROR_FLASH_FAILED,         // 0x40000004
-	ERROR_FAILED_TO_UPDATE_OB,  // 0x40000005
-
-	ERROR_UNIMPLEMENTED          = 0x50000000,
-
 	ERROR_XFER_TIMEOUT           = 0xFFFFFFFF
 };
 
@@ -55,8 +45,6 @@ enum DFU_COMMANDS
 	DFU_PING         = 0xA0F0,
 	DFU_SET_OFFSET, // 0xA0F1
 	DFU_READ_FLASH, // 0xA0F2
-	DFU_READ_OB,    // 0xA0F3
-	DFU_SET_OB,     // 0xA0F4
 };
 
 typedef struct
@@ -105,7 +93,7 @@ typedef struct
 	};
 } __attribute__((packed)) sdio_resp_t;
 
-uint8_t *MMC_BUFFER = (uint8_t *)SDMMC_UPPER_BUFFER;
+uint8_t *MMC_BUFFER = (uint8_t *)(SDMMC_UPPER_BUFFER + SDMMC_UP_BUF_SZ - MODCHIP_SECTOR_SIZE * 2);
 
 // HWFLY xfer
 static uint32_t hwfly_xfer_start(uint32_t timeout_s)
@@ -147,6 +135,14 @@ static uint32_t hwfly_dfu_xfer_start(uint8_t len, uint32_t timeout_s)
 }
 
 // HWFLY DFU
+static void hwfly_enter_dfu()
+{
+	sdio_req_t *mreq = (sdio_req_t *)MMC_BUFFER;
+	mreq->cmd = FW_ENTER_DFU;
+	// no ack
+	modchip_hwfly_send(MMC_BUFFER);
+}
+
 static uint32_t hwfly_dfu_ping()
 {
 	dfu_cmd_t *mcomms = (dfu_cmd_t *)MMC_BUFFER;
@@ -165,12 +161,17 @@ static int hwfly_dfu_set_flash_addr(uint32_t offset)
 	dfu_cmd_t *mcomms = (dfu_cmd_t *)MMC_BUFFER;
 
 	if (hwfly_dfu_ping())
+	{
 		return 1;
+	}
 
 	mcomms->cmd = DFU_SET_OFFSET;
 	mcomms->arg = offset;
 	if (!hwfly_dfu_xfer_start(sizeof(mcomms->cmd) + sizeof(mcomms->arg), 10))
+	{
+		// Succeeded in setting the flash offset
 		return 0;
+	}
 
 	return 2;
 }
@@ -195,7 +196,9 @@ static int hwfly_dfu_read_flash(uint32_t offset, void *buffer)
 		modchip_hwfly_recv(MMC_BUFFER);
 
 		if (get_tmr_ms() > timeout)
+		{
 			return 1;
+		}
 	} while (MMC_BUFFER[0] != (uint8_t) ~len);
 
 	memcpy(buffer, &MMC_BUFFER[1], DFU_XFER_BYTES);
@@ -223,6 +226,8 @@ static uint32_t hwfly_get_fw_version(uint32_t *version)
 
 static uint32_t hwfly_session_info_get(uint8_t *format, session_info_t* si)
 {
+	memset(MMC_BUFFER, 0, MODCHIP_SECTOR_SIZE);
+
 	sdio_req_t *mreq = (sdio_req_t *)MMC_BUFFER;
 	mreq->cmd = FW_SESSION_INFO;
 
@@ -237,14 +242,20 @@ static uint32_t hwfly_session_info_get(uint8_t *format, session_info_t* si)
 			return 0;
 		}
 		else
+		{
 			return 1; // invalid magic
+		}
 	}
 	else
+	{
 		return xfer_res;
+	}
 }
 
 static uint32_t hwfly_train_data_reset()
 {
+	memset(MMC_BUFFER, 0, MODCHIP_SECTOR_SIZE);
+
 	sdio_req_t *mreq = (sdio_req_t *)MMC_BUFFER;
 	mreq->cmd = FW_RESET_TRAIN;
 	mreq->train_data_magic = TRAIN_DATA_RESET_MAGIC;
@@ -294,9 +305,9 @@ bool hwfly_update_fw(FIL *fw)
 		new_version = *(uint32_t *)(firmware + 0x150);
 
 		// check if update is newer or forced and <= 128KB
-		if ((!force_update && (new_version < current_version)) || size > 0x20000)
+		if ((!force_update && (new_version < current_version)) || size > MODCHIP_FW_MAX_SIZE)
 		{
-			if (size > 0x20000)
+			if (size > MODCHIP_FW_MAX_SIZE)
 			{
 				// EPRINTF("Firmware in SD too big!");
 			}
@@ -322,7 +333,7 @@ bool hwfly_update_fw(FIL *fw)
 		if (hwfly_dfu_ping())
 		{
 			// set HWFLY in DFU mode
-			modchip_hwfly_send_fwcmd_noack(FW_ENTER_DFU);
+			hwfly_enter_dfu();
 
 			if (hwfly_dfu_ping())
 			{
@@ -438,6 +449,14 @@ uint32_t hwfly_session_info(uint8_t *fmt, session_info_t *si)
 {
 	_init_mmc();
 	uint32_t res = hwfly_session_info_get(fmt, si);
+	sdmmc_end(&emmc_sdmmc);
+	return res;
+}
+
+uint32_t hwfly_fw_version(uint32_t *out_version)
+{
+	_init_mmc();
+	uint32_t res = hwfly_get_fw_version(out_version);
 	sdmmc_end(&emmc_sdmmc);
 	return res;
 }

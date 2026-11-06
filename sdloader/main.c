@@ -64,6 +64,11 @@ static SD_LOADER_STATUS read_payload(FIL *f)
 		return SD_LOADER_INV_PAYLOAD_SZ;
 	}
 
+	if (sz > PAYLOAD_SIZE_SAFE)
+	{
+		display_end();
+	}
+
 	void *buf = (void*)PAYLOAD_BUF_ADDR;
 
 	u32 br;
@@ -236,12 +241,7 @@ static void try_launch_payload()
 		return;
 	}
 
-	SD_LOADER_STATUS res = SD_LOADER_ERROR;
-
-	// TODO: probably should disable backlight if payload is big enough to overwrite frame buffer
-	res = load_payload();
-
-	if (res == SD_LOADER_OK)
+	if (load_payload() == SD_LOADER_OK)
 	{
 		launch_payload();
 	}

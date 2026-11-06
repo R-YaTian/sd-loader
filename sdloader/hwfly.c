@@ -22,9 +22,9 @@
 #include <storage/sd.h>
 #include <storage/emmc.h>
 #include <storage/sdmmc_driver.h>
+#include <utils/sprintf.h>
 
 #include "hwfly.h"
-#include "files.h"
 #include "modchip.h"
 #include "memory_map.h"
 
@@ -93,7 +93,7 @@ typedef struct
 	};
 } __attribute__((packed)) sdio_resp_t;
 
-uint8_t *MMC_BUFFER = (uint8_t *)(SDMMC_UPPER_BUFFER + SDMMC_UP_BUF_SZ - MODCHIP_SECTOR_SIZE * 2);
+uint8_t *MMC_BUFFER = (uint8_t *)(SDMMC_CMD_BUFFER);
 
 // HWFLY xfer
 static uint32_t hwfly_xfer_start(uint32_t timeout_s)
@@ -267,112 +267,93 @@ static uint32_t hwfly_train_data_reset()
 }
 
 // HWFLY features
-/*
-bool hwfly_update_fw(FIL *fw)
+static int hwfly_update_fw(const u8 *firmware, u32 size)
 {
-	FIL fp;
-	uint32_t new_version = 0;
-
-	sdmmc_init(&emmc_sdmmc, SDMMC_4, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_MMC_ID);
-
-	FRESULT res = open_file_on(".force_update", &fp, 0);
-	bool force_update = res == FR_OK;
-
-	uint32_t current_version;
-	if (hwfly_get_fw_version(&current_version) == ERROR_XFER_TIMEOUT)
+	uint32_t fw_version;
+	if (hwfly_get_fw_version(&fw_version) != 0)
 	{
-		if (hwfly_dfu_ping() || !force_update)
-		{
-			goto out;
-		}
+		return -3;
 	}
 
-	u32 version_print = current_version < 0x100 ? (current_version << 8) : current_version;
-	gfx_printf("Current FW Ver: %d.%d.%d\nForce update: %d\n\n", version_print >> 16, (version_print >> 8) & 0xFF, version_print & 0xFF, force_update);
-
-	u32 size = 0;
-	uint8_t *firmware = sd_file_read("firmware.bin", &size);
-
-	if (!firmware) {
-		// EPRINTF("firmware.bin not found!\n");
-		goto out;
+	uint32_t new_version = *(uint32_t *)(firmware + 0x150);
+	// check if update is newer
+	if (new_version < fw_version)
+	{
+		return -4;
 	}
 
-	// open update
-	if (firmware)
+	// set HWFLY in DFU mode
+	hwfly_enter_dfu();
+	if (hwfly_dfu_ping())
 	{
-		// read fw version
-		new_version = *(uint32_t *)(firmware + 0x150);
+		return -5;
+	}
 
-		// check if update is newer or forced and <= 128KB
-		if ((!force_update && (new_version < current_version)) || size > MODCHIP_FW_MAX_SIZE)
+	// set FW flash address
+	if (hwfly_dfu_set_flash_addr(DFU_FW_OFFSET))
+	{
+		return -6;
+	}
+
+	uint8_t pct = 0;
+	uint32_t prevPct = 200;
+	uint32_t offset = 0;
+	uint32_t remaining = size;
+	char flash_str[26] = "Flashing firmware: 100";
+
+	// start flashing
+	while (remaining)
+	{
+		// load and start xfer
+		memset(&MMC_BUFFER[1], 0, DFU_XFER_BYTES);
+		memcpy(&MMC_BUFFER[1], firmware + offset, MIN(remaining, DFU_XFER_BYTES));
+		if (hwfly_dfu_xfer_start(DFU_XFER_BYTES, 10))
 		{
-			if (size > MODCHIP_FW_MAX_SIZE)
-			{
-				// EPRINTF("Firmware in SD too big!");
-			}
-			else
-			{
-				// EPRINTF("Firmware in SD not newer!");
-			}
-
-			f_close(&fp);
-			goto out;
+			break;
 		}
 
-		version_print = new_version < 0x100 ? (new_version << 8) : new_version;
-		if (force_update)
-			gfx_printf("Forced update to version %d.%d.%d.\nPress Power to update or VOL to exit..\n", version_print >> 16, (version_print >> 8) & 0xFF, version_print & 0xFF);
-		else
-			gfx_printf("New version %d.%d.%d found.\nPress Power to update or VOL to exit..\n", version_print >> 16, (version_print >> 8) & 0xFF, version_print & 0xFF);
-
-		msleep(500);
-
-		gfx_printf("\nEntering DFU mode..");
-		// set HWFLY in DFU mode if not already
-		if (hwfly_dfu_ping())
+		pct = ((uint32_t)offset * 100) / size;
+		pct = MIN(pct, 100);
+		if (pct != prevPct)
 		{
-			// set HWFLY in DFU mode
-			hwfly_enter_dfu();
-
-			if (hwfly_dfu_ping())
-			{
-				// EPRINTF("DFU doesn't respond..\n");
-				goto out;
-			}
+			s_printf(&flash_str[0], "Flashing firmware: %u%%", pct);
+			tui_print_status(COL_TEAL, flash_str);
+			prevPct = pct;
 		}
 
-		// print info
-		gfx_printf("\nFlashing FW...\n");
+		offset += MIN(remaining, DFU_XFER_BYTES);
+		remaining -= MIN(remaining, DFU_XFER_BYTES);
+	}
 
-		// set FW flash address
-		if (hwfly_dfu_set_flash_addr(DFU_FW_OFFSET)) {
-			// EPRINTF("\nFailed to set flash address!\n");
-			goto out;
-		}
+	if (!remaining)
+	{
+		tui_print_status(COL_TEAL, "Flashed, now verifying!");
 
-		uint8_t pct = 0;
-		uint32_t prevPct = 200;
-		uint32_t offset = 0;
-		uint32_t remaining = size;
-
-		// start flashing
+		// start verification
+		remaining = size;
+		offset = 0;
+		uint8_t buffer[64];
 		while (remaining)
 		{
 			// load and start xfer
 			memset(&MMC_BUFFER[1], 0, DFU_XFER_BYTES);
-			memcpy(&MMC_BUFFER[1], firmware + offset, MIN(remaining, DFU_XFER_BYTES));
-			if (hwfly_dfu_xfer_start(DFU_XFER_BYTES, 10)) {
-				// EPRINTFARGS("\nFailed to flash (@ %08X)!\n", 0x8000000 + DFU_FW_OFFSET + offset);
+
+			if (hwfly_dfu_read_flash(DFU_FW_OFFSET + offset, buffer))
+			{
+				break;
+			}
+
+			if (memcmp(buffer, firmware + offset, MIN(remaining, DFU_XFER_BYTES)))
+			{
 				break;
 			}
 
 			pct = ((uint32_t)offset * 100) / size;
-			if (pct > 100)
-				pct = 100;
+			pct = MIN(pct, 100);
 			if (pct != prevPct)
 			{
-				// tui_pbar(0, gfx_con.y, pct, 0xFFFF9600, 0xFF551500);
+				s_printf(&flash_str[0], "Verifying firmware: %u%%", pct);
+				tui_print_status(COL_TEAL, flash_str);
 				prevPct = pct;
 			}
 
@@ -382,60 +363,36 @@ bool hwfly_update_fw(FIL *fw)
 
 		if (!remaining)
 		{
-			// tui_pbar(0, gfx_con.y, 100, 0xFFFF9600, 0xFF551500);
-			gfx_printf("\n\nFlashed, now verifying..\n");
-
-			// start verification
-			remaining = size;
-			offset = 0;
-			uint8_t buffer[64];
-			while (remaining)
-			{
-				// load and start xfer
-				memset(&MMC_BUFFER[1], 0, DFU_XFER_BYTES);
-
-				if (hwfly_dfu_read_flash(DFU_FW_OFFSET + offset, buffer))
-				{
-					// EPRINTFARGS("Verification failed at %08X: no response!\n", 0x8000000 + DFU_FW_OFFSET + offset);
-					break;
-				}
-
-				if (memcmp(buffer, firmware + offset, MIN(remaining, DFU_XFER_BYTES)))
-				{
-					// EPRINTFARGS("Verification mismatch at %08X: firmware corrupt!\n", 0x8000000 + DFU_FW_OFFSET + offset);
-					break;
-				}
-
-				pct = ((uint32_t)offset * 100) / size;
-				if (pct > 100)
-					pct = 100;
-				if (pct != prevPct)
-				{
-					// tui_pbar(0, gfx_con.y, pct, 0xFF96FF00, 0xFF155500);
-					prevPct = pct;
-				}
-
-				offset += MIN(remaining, DFU_XFER_BYTES);
-				remaining -= MIN(remaining, DFU_XFER_BYTES);
-			}
-
-			if (!remaining)
-			{
-				// tui_pbar(0, gfx_con.y, 100, 0xFF96FF00, 0xFF155500);
-				gfx_printf("\nVerified successfully\n");
-				if (force_update)
-					f_unlink(".force_update");
-			}
+			return true;
 		}
-
-		free(firmware);
 	}
 
-out:
-	sd_end();
-	sdmmc_end(&emmc_sdmmc);
+	return false;
 }
-*/
+
+int hwfly_update_fw_from_file(FIL *f)
+{
+	u32 size = f_size(f);
+
+	if (size <= SDMMC_UP_BUF_SZ)
+	{
+		u8 *buf = (u8*)SDMMC_UPPER_BUFFER;
+		u32 br;
+
+		FRESULT f_res = f_read(f, buf, size, &br);
+		if(f_res != FR_OK || br != size)
+		{
+			return -1;
+		}
+
+		_init_mmc();
+		int res = hwfly_update_fw(buf, size);
+		sdmmc_end(&emmc_sdmmc);
+		return res;
+	}
+
+	return -2;
+}
 
 uint32_t hwfly_reset_train_data()
 {

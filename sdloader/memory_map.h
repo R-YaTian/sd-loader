@@ -24,7 +24,7 @@
 
 #define IPL_SIZE_MAX              0x10000 // 64K max
 
-#define IPL_SMALL_FB_SZ           (SZ_32K + SZ_16K + SZ_8K + SZ_4K)
+#define IPL_SMALL_FB_SZ           (SZ_64K - SZ_4K)
 
 #define IPL_HEAP_SIZE_MAX         (SZ_1K)
 #define IPL_STACK_SIZE_MAX        (SZ_1K * 8)
@@ -43,7 +43,8 @@
 #define PAYLOAD_LOAD_ADDR         0x40010000
 
 #define SDMMC_UPPER_BUFFER        PAYLOAD_BUF_ADDR
-#define SDMMC_UP_BUF_SZ           PAYLOAD_SIZE_SAFE
+#define SDMMC_UP_BUF_SZ           (PAYLOAD_SIZE_SAFE - SZ_1K)
+#define SDMMC_CMD_BUFFER          (SDMMC_UPPER_BUFFER + SDMMC_UP_BUF_SZ)
 
 #if (PAYLOAD_SIZE_MAX) > (IPL_HEAP_START - PAYLOAD_BUF_ADDR)
 #error Payload buffer too large

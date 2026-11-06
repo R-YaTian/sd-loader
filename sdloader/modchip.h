@@ -88,7 +88,7 @@ bool modchip_write_rollback_cmd();
 bool modchip_read_desc(modchip_desc_t *desc);
 bool modchip_is_desc_valid(modchip_desc_t *desc);
 bool modchip_write_fw_update(const u8 *buf, u32 size);
-bool modchip_write_fw_update_from_file(FIL *f);
+int modchip_write_fw_update_from_file(FIL *f);
 bool modchip_write_ipl_update(const u8 *buf, u32 size);
 bool modchip_write_ipl_update_from_file(FIL *f);
 

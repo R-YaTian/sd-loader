@@ -84,7 +84,7 @@ void modchip_hwfly_recv(u8 *buf)
 void modchip_hwfly_send_fwcmd_noack(u8 cmd)
 {
 	_init_mmc();
-	u8 *modchip_buf = (u8*)SDMMC_UPPER_BUFFER;
+	u8 *modchip_buf = (u8*)SDMMC_CMD_BUFFER;
 	memset(modchip_buf, 0, MODCHIP_SECTOR_SIZE);
 	modchip_buf[0] = cmd;
 	modchip_hwfly_send(modchip_buf);
@@ -93,7 +93,7 @@ void modchip_hwfly_send_fwcmd_noack(u8 cmd)
 #endif
 
 bool modchip_get_cfg(sd_loader_cfg_t *cfg){
-	u8 *buf = (u8*)SDMMC_UPPER_BUFFER;
+	u8 *buf = (u8*)SDMMC_CMD_BUFFER;
 	DRESULT res = disk_read(DEV_BOOT0, buf, MODCHIP_CFG_SECTOR, 1);
 	if(res == RES_OK){
 		memcpy(cfg, buf + MODCHIP_CFG_OFFSET, sizeof(*cfg));
@@ -110,7 +110,7 @@ void modchip_get_cfg_or_default(sd_loader_cfg_t *cfg){
 }
 
 bool modchip_set_cfg(sd_loader_cfg_t *cfg){
-	u8 *buf = (u8*)SDMMC_UPPER_BUFFER;
+	u8 *buf = (u8*)SDMMC_CMD_BUFFER;
 	if(disk_read(DEV_BOOT0, buf, MODCHIP_CFG_SECTOR, 1) != RES_OK){
 		return false;
 	}
@@ -127,7 +127,7 @@ bool modchip_is_cfg_valid(sd_loader_cfg_t *cfg){
 
 static bool modchip_write_cmd(modchip_cmd_t *cmd)
 {
-	u8 *buf = (u8 *)SDMMC_UPPER_BUFFER;
+	u8 *buf = (u8 *)SDMMC_CMD_BUFFER;
 
 	if (disk_read(DEV_BOOT0, buf, MODCHIP_CMD_SECTOR, 1) != RES_OK)
 	{
@@ -141,7 +141,8 @@ static bool modchip_write_cmd(modchip_cmd_t *cmd)
 }
 
 // buf must be multiple of 512
-bool modchip_write_fw_update(const u8 *buf, u32 size){
+bool modchip_write_fw_update(const u8 *buf, u32 size)
+{
 	u32 sec_cnt = (size + MODCHIP_SECTOR_SIZE - 1) / MODCHIP_SECTOR_SIZE;
 
 	// modchip will overwrite our config and fw descriptor when applying update/resetting
@@ -160,7 +161,7 @@ bool modchip_write_fw_update(const u8 *buf, u32 size){
 	}
 }
 
-bool modchip_write_fw_update_from_file(FIL *f)
+int modchip_write_fw_update_from_file(FIL *f)
 {
 	FRESULT f_res;
 	u32 size = f_size(f);
@@ -177,13 +178,13 @@ bool modchip_write_fw_update_from_file(FIL *f)
 		f_res = f_read(f, buf, size, &br);
 		if(f_res != FR_OK || br != size)
 		{
-			return false;
+			return -1;
 		}
 
 		return modchip_write_fw_update(buf, size);
 	}
 
-	return false;
+	return -2;
 }
 
 // buf must be multiple of 512
@@ -246,7 +247,7 @@ bool modchip_write_rollback_cmd()
 
 bool modchip_read_desc(modchip_desc_t *desc)
 {
-	u8 *buf = (u8 *)SDMMC_UPPER_BUFFER;
+	u8 *buf = (u8 *)SDMMC_CMD_BUFFER;
 
 	if (disk_read(DEV_BOOT0, buf, MODCHIP_DESC_SECTOR, 1) != RES_OK)
 	{

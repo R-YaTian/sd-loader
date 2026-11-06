@@ -346,16 +346,43 @@ static void update_fw(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 	u32 start = get_tmr_ms();
 	tui_print_status(COL_TEAL, "Writing FW Update...");
 
-	bool res = modchip_write_fw_update_from_file(update_info->f);
+#if defined(TARGET_HWFLY)
+	int res = hwfly_update_fw_from_file(update_info->f);
+#else
+	int res = modchip_write_fw_update_from_file(update_info->f);
+#endif
 
 	if (get_tmr_ms() - start < 1000)
 	{
 		msleep(1000 - (get_tmr_ms() - start));
 	}
 
-	if (!res)
+	if (res != true)
 	{
-		tui_print_status(COL_ORANGE, "FW update fail. Reboot console!");
+		switch (res)
+		{
+			case -1:
+				tui_print_status(COL_ORANGE, "Failed to read update file!");
+				break;
+			case -2:
+				tui_print_status(COL_ORANGE, "Not enough memory to read update!");
+				break;
+			case -3:
+				tui_print_status(COL_ORANGE, "Failed to get current FW version!");
+				break;
+			case -4:
+				tui_print_status(COL_ORANGE, "Firmware in SD not newer!");
+				break;
+			case -5:
+				tui_print_status(COL_ORANGE, "DFU doesn't respond!");
+				break;
+			case -6:
+				tui_print_status(COL_ORANGE, "Failed to set flash address!");
+				break;
+			default:
+				tui_print_status(COL_ORANGE, "FW update fail. Reboot console!");
+				break;
+		}
 	}
 	else
 	{

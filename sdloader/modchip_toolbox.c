@@ -183,7 +183,7 @@ void info_cb(void *data, tui_entry_t *entry, tui_entry_menu_t *menu)
 		.pos_y      = menu->pos_y,
 		.pad        = 22,
 		.height     = ARRAY_SIZE(menu_entries) + 2,
-		.width      = 22,
+		.width      = 23,
 		.colors     = &TUI_COLOR_SCHEME_DEFAULT,
 		.timeout_ms = 0,
 		.show_title = true,
@@ -644,9 +644,6 @@ void toolbox(u32 x, u32 y, sd_loader_cfg_t *cfg)
 	{
 		menu.entries[4].disabled = true;
 	}
-#if defined(TARGET_HWFLY)
-	menu.entries[1].disabled = true;
-#endif
 	tui_menu_start_rot(&menu);
 
 	emmc_end();

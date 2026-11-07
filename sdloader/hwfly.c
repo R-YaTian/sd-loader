@@ -316,7 +316,7 @@ static int hwfly_update_fw(const u8 *firmware, u32 size)
 		pct = MIN(pct, 100);
 		if (pct != prevPct)
 		{
-			s_printf(&flash_str[0], "Flashing firmware: %u%%", pct);
+			s_printf(&flash_str[0], "Flashing firmware: %d%%", pct);
 			tui_print_status(COL_TEAL, flash_str);
 			prevPct = pct;
 		}
@@ -352,7 +352,7 @@ static int hwfly_update_fw(const u8 *firmware, u32 size)
 			pct = MIN(pct, 100);
 			if (pct != prevPct)
 			{
-				s_printf(&flash_str[0], "Verifying firmware: %u%%", pct);
+				s_printf(&flash_str[0], "Verifying firmware: %d%%", pct);
 				tui_print_status(COL_TEAL, flash_str);
 				prevPct = pct;
 			}

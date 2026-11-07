@@ -1,6 +1,7 @@
 #include <libs/fatfs/ff.h>
 #include <memory_map.h>
 #include <gfx.h>
+#include <soc/timer.h>
 #include <storage/emmc.h>
 #include <storage/sd.h>
 #include <string.h>

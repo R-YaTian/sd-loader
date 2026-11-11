@@ -22,6 +22,7 @@
 #include <soc/bpmp.h>
 
 #if PICOFLY_TOOLBOX || TARGET_HWFLY
+#include <input/joycon.h>
 #include "modchip_toolbox.h"
 #endif
 
@@ -39,9 +40,6 @@ typedef enum{
 	SD_LOADER_ERROR              // other error
 } SD_LOADER_STATUS;
 
-extern void pivot_stack(u32 stack_top);
-extern void excp_reset(void);
-
 static bool display_init_done = false;
 static sd_loader_cfg_t sdloader_cfg;
 static payload_ctx_t payload_ctx = {0};
@@ -51,6 +49,9 @@ static void deinit()
 	unmount_drive();
 	sd_end();
 	emmc_end();
+#if PICOFLY_TOOLBOX || TARGET_HWFLY
+	jc_deinit();
+#endif
 	hw_deinit(false);
 }
 

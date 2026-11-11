@@ -1,15 +1,87 @@
 #include <tui.h>
-
-#include <display/di.h>
 #include <gfx.h>
-#include <soc/timer.h>
-#include <string.h>
-#include <utils/btn.h>
-#include <power/max17050.h>
-#include <power/bq24193.h>
 #include <bdkver.h>
+#include <soc/timer.h>
+#include <utils/btn.h>
+#include <display/di.h>
+#include <input/joycon.h>
+#include <power/bq24193.h>
+#include <power/max17050.h>
+
+#include <string.h>
 
 #define DIM_TIMEOUT 20000 // ms
+
+static bool tui_btn_is_single(u8 btn)
+{
+	if (btn == BTN_VOL_DOWN || btn == BTN_VOL_UP || btn == BTN_POWER)
+	{
+		return (true);
+	}
+	return (false);
+}
+
+#if PICOFLY_TOOLBOX || TARGET_HWFLY
+static u8 tui_joycon_to_btn()
+{
+	jc_gamepad_rpt_t *jc = joycon_poll();
+	if (jc)
+	{
+		u8 jc_btns = 0;
+
+		// D-Pad Up/Left/L/ZL -> VOL_UP
+		if (jc->up || jc->left || jc->l || jc->zl)
+			jc_btns |= BTN_VOL_UP;
+
+		// D-Pad Down/Right/R/ZR -> VOL_DOWN
+		if (jc->down || jc->right || jc->r || jc->zr)
+			jc_btns |= BTN_VOL_DOWN;
+
+		// A/-/+ -> POWER
+		if (jc->a || jc->minus || jc->plus)
+			jc_btns |= BTN_POWER;
+
+		// Return the mapped buttons.
+		return jc_btns;
+	}
+
+	return 0;
+}
+#endif
+
+static u8 tui_btn_wait_timeout_single(u32 time_ms)
+{
+	u8 btn_prev = btn_read();
+	u8 btn;
+#if PICOFLY_TOOLBOX || TARGET_HWFLY
+	for (u32 i = 0; i < 6; i++)
+	{
+		joycon_poll();
+		msleep(15);
+	}
+	btn_prev |= tui_joycon_to_btn();
+#endif
+	u32 timeout = get_tmr_ms() + time_ms;
+	while (get_tmr_ms() < timeout)
+	{
+		btn = btn_read();
+#if PICOFLY_TOOLBOX || TARGET_HWFLY
+		if (btn == 0)
+		{
+			btn = tui_joycon_to_btn();
+		}
+#endif
+		if (tui_btn_is_single(btn))
+		{
+			if (!(btn & btn_prev))
+			{
+				return (btn);
+			}
+		}
+		btn_prev = btn;
+	}
+	return (0);
+}
 
 static bool tui_entry_is_selectable(tui_entry_t *entry)
 {
@@ -204,7 +276,7 @@ tui_status_t tui_menu_start_rot(tui_entry_menu_t *menu)
 	while(true){
 		tui_print_menu(menu);
 
-		u8 btn = btn_wait_timeout_single(1000);
+		u8 btn = tui_btn_wait_timeout_single(1000);
 
 		if(!btn){
 			if(menu->timeout_ms){

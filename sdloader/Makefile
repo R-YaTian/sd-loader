@@ -44,10 +44,10 @@ OBJS = $(addprefix $(BUILD_DIR)/$(TARGET)/, \
 	loader.o modchip.o files.o )
 
 ifeq ($(PICOFLY_TOOLBOX),1)
-OBJS += $(addprefix $(BUILD_DIR)/$(TARGET)/, modchip_toolbox.o sprintf.o)
+OBJS += $(addprefix $(BUILD_DIR)/$(TARGET)/, modchip_toolbox.o sprintf.o uart.o regulator_5v.o joycon.o)
 CUSTOMDEFINES += -DPICOFLY_TOOLBOX
 else ifeq ($(TARGET_HWFLY),1)
-OBJS += $(addprefix $(BUILD_DIR)/$(TARGET)/, modchip_toolbox.o sprintf.o hwfly.o)
+OBJS += $(addprefix $(BUILD_DIR)/$(TARGET)/, modchip_toolbox.o sprintf.o hwfly.o uart.o regulator_5v.o joycon.o)
 CUSTOMDEFINES += -DTARGET_HWFLY
 endif
 

@@ -35,17 +35,6 @@ u8 btn_read()
 	return res;
 }
 
-/* Custom modifications Start */
-static bool btn_is_single(u8 btn){
-	if(btn == BTN_VOL_DOWN ||
-	   btn == BTN_VOL_UP   ||
-	   btn == BTN_POWER){
-		return(true);
-	}
-	return(false);
-}
-/* Custom modifications End */
-
 u8 btn_read_vol()
 {
 	u8 res = 0;
@@ -102,25 +91,7 @@ u8 btn_wait_timeout(u32 time_ms, u8 mask)
 	return res;
 }
 
-/* Custom modifications Start */
-u8 btn_wait_timeout_single(u32 time_ms){
-	u8 btn_prev = btn_read();
-	u8 btn;
-	u32 timeout = get_tmr_ms() + time_ms;
-	while(get_tmr_ms() < timeout){
-		btn = btn_read();
-		if(btn_is_single(btn)){
-			if(!(btn & btn_prev)){
-				return(btn);
-			}
-		}
-		btn_prev = btn;
-	}
-	return(0);
-}
-
-u8 btn_wait_timeout_singleEx(u32 time_ms, u8 mask)
-/* Custom modifications End */
+u8 btn_wait_timeout_single(u32 time_ms, u8 mask)
 {
 	u8 single_button = mask & BTN_SINGLE;
 	mask &= ~BTN_SINGLE;

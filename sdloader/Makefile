@@ -41,7 +41,7 @@ OBJS = $(addprefix $(BUILD_DIR)/$(TARGET)/, \
     sdmmc.o sd.o sdmmc_driver.o \
 	di.o gfx.o tui.o emmc.o timer.o \
 	diskio.o ff.o ffsystem.o ffunicode.o max17050.o \
-	loader.o modchip.o files.o )
+	modchip.o files.o )
 
 ifeq ($(PICOFLY_TOOLBOX),1)
 OBJS += $(addprefix $(BUILD_DIR)/$(TARGET)/, modchip_toolbox.o sprintf.o uart.o regulator_5v.o joycon.o)

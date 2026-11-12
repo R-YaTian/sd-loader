@@ -1,7 +1,6 @@
 #include <utils/types.h>
 #include <memory_map.h>
 
-
 #pragma GCC optimize ("O3")
 static void reloc(void *dst, void *src, u32 size){
 	u8 *src_8 = (u8*)src;

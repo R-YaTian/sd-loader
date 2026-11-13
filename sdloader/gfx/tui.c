@@ -37,8 +37,8 @@ static u8 tui_joycon_to_btn()
 		if (jc->down || jc->right || jc->r || jc->zr)
 			jc_btns |= BTN_VOL_DOWN;
 
-		// A/-/+ -> POWER
-		if (jc->a || jc->minus || jc->plus)
+		// A/-/+/Home -> POWER
+		if (jc->a || jc->minus || jc->plus || jc->home)
 			jc_btns |= BTN_POWER;
 
 		// Return the mapped buttons.

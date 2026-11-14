@@ -56,10 +56,14 @@ static u8 tui_btn_wait_timeout_single(u32 time_ms)
 #if PICOFLY_TOOLBOX || TARGET_HWFLY
 	for (u32 i = 0; i < 6; i++)
 	{
-		joycon_poll();
+		if (joycon_poll() != NULL)
+		{
+			break;
+		}
 		msleep(15);
 	}
 	btn_prev |= tui_joycon_to_btn();
+	msleep(10);
 #endif
 	u32 timeout = get_tmr_ms() + time_ms;
 	while (get_tmr_ms() < timeout)
@@ -69,6 +73,7 @@ static u8 tui_btn_wait_timeout_single(u32 time_ms)
 		if (btn == 0)
 		{
 			btn = tui_joycon_to_btn();
+			msleep(10);
 		}
 #endif
 		if (tui_btn_is_single(btn))
